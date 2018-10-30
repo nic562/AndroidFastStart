@@ -39,7 +39,7 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
         val perms = getInitPermissions() ?: return
         assert(perms.isNotEmpty())
         if (EasyPermissions.hasPermissions(this, *perms)) {
-
+            onInitPermissionsFinish(mutableListOf())
         } else {
             requestPermissions(getInitPermissionsDescriptions(), REQUEST_CODE_INIT_PERMISSIONS, *perms)
         }
