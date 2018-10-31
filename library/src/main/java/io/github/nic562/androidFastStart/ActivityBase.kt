@@ -1,7 +1,6 @@
 package io.github.nic562.androidFastStart
 
 import android.content.Intent
-import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import org.jetbrains.anko.AnkoLogger
 import pub.devrel.easypermissions.AfterPermissionGranted
@@ -19,9 +18,13 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
 
     private var latestPermissionSettingRequestCode: Int = 0
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        initPermissions()
+    private var finishCheckingInitPermission = false
+
+    override fun onStart() {
+        super.onStart()
+        if (!finishCheckingInitPermission) {
+            initPermissions()
+        }
     }
 
     /**
@@ -34,12 +37,17 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
 
     abstract fun onInitPermissionsFinish(deniedPermissions: List<String>)
 
+    private fun onInitPermissionsFinishFirst(deniedPermissions: List<String>) {
+        finishCheckingInitPermission = true
+        onInitPermissionsFinish(deniedPermissions)
+    }
+
     @AfterPermissionGranted(REQUEST_CODE_INIT_PERMISSIONS)
     private fun initPermissions() { // 启动所需权限
         val perms = getInitPermissions() ?: return
         assert(perms.isNotEmpty())
         if (EasyPermissions.hasPermissions(this, *perms)) {
-            onInitPermissionsFinish(mutableListOf())
+            onInitPermissionsFinishFirst(mutableListOf())
         } else {
             requestPermissions(getInitPermissionsDescriptions(), REQUEST_CODE_INIT_PERMISSIONS, *perms)
         }
@@ -92,7 +100,7 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
      */
     protected open fun onPermissionsSettingFinish(requestCode: Int, deniedPermissions: List<String>) {
         if (requestCode == REQUEST_CODE_INIT_PERMISSIONS) {
-            onInitPermissionsFinish(deniedPermissions)
+            onInitPermissionsFinishFirst(deniedPermissions)
         }
     }
 
