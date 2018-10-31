@@ -24,6 +24,7 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
         super.onStart()
         if (!finishCheckingInitPermission) {
             initPermissions()
+            finishCheckingInitPermission = true
         }
     }
 
@@ -37,17 +38,14 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
 
     abstract fun onInitPermissionsFinish(deniedPermissions: List<String>)
 
-    private fun onInitPermissionsFinishFirst(deniedPermissions: List<String>) {
-        finishCheckingInitPermission = true
-        onInitPermissionsFinish(deniedPermissions)
-    }
-
     @AfterPermissionGranted(REQUEST_CODE_INIT_PERMISSIONS)
     private fun initPermissions() { // 启动所需权限
-        val perms = getInitPermissions() ?: return
-        assert(perms.isNotEmpty())
+        val perms = getInitPermissions()
+        if (perms == null || perms.isEmpty()) {
+            return
+        }
         if (EasyPermissions.hasPermissions(this, *perms)) {
-            onInitPermissionsFinishFirst(mutableListOf())
+            onInitPermissionsFinish(mutableListOf())
         } else {
             requestPermissions(getInitPermissionsDescriptions(), REQUEST_CODE_INIT_PERMISSIONS, *perms)
         }
@@ -67,7 +65,6 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
     }
 
     override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
-        onPermissionsSettingFinish(requestCode, ArrayList())
     }
 
     override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
@@ -77,6 +74,8 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
         if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
             latestPermissionSettingRequestCode = requestCode // 保持这个请求号，以便子类再继续处理该情况
             AppSettingsDialog.Builder(this).build().show()
+        } else {
+            onPermissionsSettingFinish(requestCode, perms)
         }
     }
 
@@ -100,7 +99,7 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
      */
     protected open fun onPermissionsSettingFinish(requestCode: Int, deniedPermissions: List<String>) {
         if (requestCode == REQUEST_CODE_INIT_PERMISSIONS) {
-            onInitPermissionsFinishFirst(deniedPermissions)
+            onInitPermissionsFinish(deniedPermissions)
         }
     }
 
