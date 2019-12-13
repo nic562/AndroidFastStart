@@ -7,11 +7,12 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.provider.MediaStore
-import android.support.v4.content.ContextCompat
-import android.support.v4.content.FileProvider
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import com.yalantis.ucrop.UCrop
 import org.jetbrains.anko.*
 import pub.devrel.easypermissions.AfterPermissionGranted
@@ -27,9 +28,9 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
 
     private val perms = arrayOf(
             Manifest.permission.CAMERA,
-            android.Manifest.permission.READ_PHONE_STATE,
-            android.Manifest.permission.READ_EXTERNAL_STORAGE,
-            android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            Manifest.permission.READ_PHONE_STATE,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
     private var tmpImageFile: File? = null
 
@@ -53,12 +54,12 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
         Handler(handlerThread.looper)
     }
 
-    var msg_take_picture = "拍照"
-    var msg_album = "相册"
-    var msg_crop_which = "选择照片来源"
-    var msg_crop_need_permission = "图片操作需要以下权限"
-    var msg_crop_failed = "图片操作失败"
-    var msg_data_error = "数据错误"
+    var msgTakePicture = ""
+    var msgAlbum = ""
+    var msgCropWhich = ""
+    var msgCropNeedPermission = ""
+    var msgCropFailed = ""
+    var msgDataError = ""
 
     protected class ImageOption {
         var crop: Boolean = false // 是否裁剪
@@ -71,6 +72,16 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
 
     protected interface CopyFileCallback {
         fun call(file: File?)
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        msgTakePicture = getString(R.string.take_picture)
+        msgAlbum = getString(R.string.album)
+        msgCropWhich = getString(R.string.picture_from)
+        msgCropNeedPermission = getString(R.string.picture_operation_need_permissions)
+        msgCropFailed = getString(R.string.picture_operation_failed)
+        msgDataError = getString(R.string.data_error)
     }
 
     private fun getDefaultTmpDir(): File {
@@ -104,8 +115,8 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
     protected fun openImageChoice() {
         if (hasPermissions(*perms)) {
             selector(
-                    msg_crop_which,
-                    listOf(msg_take_picture, msg_album)
+                    msgCropWhich,
+                    listOf(msgTakePicture, msgAlbum)
             ) { _, i ->
                 when (i) {
                     0 -> openCamera()
@@ -113,7 +124,7 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
                 }
             }
         } else {
-            requestPermissions(msg_crop_need_permission, REQUEST_CODE_PERMISSIONS, *perms)
+            requestPermissions(msgCropNeedPermission, REQUEST_CODE_PERMISSIONS, *perms)
         }
     }
 
@@ -141,8 +152,8 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
         super.onPermissionsSettingFinish(requestCode, deniedPermissions)
         if (deniedPermissions.isNotEmpty()) {
             alert(
-                    msg_crop_need_permission,
-                    msg_crop_failed
+                    msgCropNeedPermission,
+                    msgCropFailed
             ) {
                 yesButton { openImageChoice() }
                 noButton { }
@@ -156,14 +167,14 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
             REQUEST_CODE_CAMERA -> {
                 if (resultCode != RESULT_OK) return
                 if (tmpImageFile == null) {
-                    toast(msg_data_error)
+                    toast(msgDataError)
                     return
                 }
                 if (tmpImageFile?.isFile ?: return) {
                     if (option.crop) openCrop(option, tmpImageFile!!)
                     else finalCallbackImage(option, tmpImageFile!!.absolutePath)
                 } else {
-                    toast(msg_data_error)
+                    toast(msgDataError)
                 }
                 return
             }
@@ -172,7 +183,7 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
                 saveUriToFile(data?.data ?: return, generateFile(), object : CopyFileCallback {
                     override fun call(file: File?) {
                         if (file == null || !file.isFile) {
-                            toast(msg_data_error)
+                            toast(msgDataError)
                             return
                         }
                         if (option.crop) openCrop(option, file)
@@ -202,7 +213,7 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
             compressImage(imagePath, newFile, option.compressQuality, object : CopyFileCallback {
                 override fun call(file: File?) {
                     if (file == null) {
-                        toast(msg_data_error)
+                        toast(msgDataError)
                         return
                     }
                     onImageReady(file.absolutePath)
