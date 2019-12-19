@@ -35,6 +35,6 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.1.0'
 
     implementation 'com.github.yalantis:ucrop:2.2.2-native'
-    api "org.jetbrains.anko:anko-commons:0.10.7"
+    api "org.jetbrains.anko:anko-commons:$anko_version"
     api 'pub.devrel:easypermissions:1.2.0'
 }

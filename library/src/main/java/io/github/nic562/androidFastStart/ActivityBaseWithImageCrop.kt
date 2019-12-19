@@ -18,13 +18,24 @@ import org.jetbrains.anko.*
 import pub.devrel.easypermissions.AfterPermissionGranted
 import java.io.*
 
-private const val REQUEST_CODE_PERMISSIONS = 200
-private const val REQUEST_CODE_CAMERA = 300
-private const val REQUEST_CODE_GALLERY = 301
 /**
+ * 集成从拍照、相册中获取图像、截图等api
+ *
+ * 占用 requestCode
+ * - 9998
+ * - 9997
+ * - 9996
+ * - 69
+ *
  * Created by Nic on 2018/10/10.
  */
 abstract class ActivityBaseWithImageCrop : ActivityBase() {
+
+    companion object {
+        private const val REQUEST_CODE_PERMISSIONS = 9998
+        private const val REQUEST_CODE_CAMERA = 9997
+        private const val REQUEST_CODE_GALLERY = 9996
+    }
 
     private val perms = arrayOf(
             Manifest.permission.CAMERA,
@@ -96,17 +107,6 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
         return File(dir ?: getDefaultTmpDir(), "${System.currentTimeMillis()}.jpg")
     }
 
-    override fun getInitPermissions(): Array<String>? {
-        return null
-    }
-
-    override fun getInitPermissionsDescriptions(): String {
-        return ""
-    }
-
-    override fun onInitPermissionsFinish(deniedPermissions: List<String>) {
-    }
-
     protected abstract fun getImageOption(): ImageOption
 
     protected abstract fun onImageReady(tmpFilePath: String)
@@ -149,16 +149,19 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
     }
 
     override fun onPermissionsSettingFinish(requestCode: Int, deniedPermissions: List<String>) {
-        super.onPermissionsSettingFinish(requestCode, deniedPermissions)
-        if (deniedPermissions.isNotEmpty()) {
-            alert(
-                    msgCropNeedPermission,
-                    msgCropFailed
-            ) {
-                yesButton { openImageChoice() }
-                noButton { }
-            }.show()
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (deniedPermissions.isNotEmpty()) {
+                alert(
+                        msgCropNeedPermission,
+                        msgCropFailed
+                ) {
+                    yesButton { openImageChoice() }
+                    noButton { }
+                }.show()
+            }
+            return
         }
+        super.onPermissionsSettingFinish(requestCode, deniedPermissions)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -200,7 +203,8 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
                     return
                 }
                 val uri = UCrop.getOutput(data ?: return)
-                finalCallbackImage(option, uri!!.path ?: throw RuntimeException("UCrop failed callback data on crop !"))
+                finalCallbackImage(option, uri!!.path
+                        ?: throw RuntimeException("UCrop failed callback data on crop !"))
                 return
             }
         }
@@ -229,7 +233,7 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
                 .withMaxResultSize(option.maxWidth, option.maxHeight)
                 .withOptions(uCropOption)
 
-        if (option.xRatio < 0 || option.yRatio < 0){
+        if (option.xRatio < 0 || option.yRatio < 0) {
 
         } else {
             oo.withAspectRatio(option.xRatio, option.yRatio)
@@ -244,7 +248,8 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
     }
 
     private fun saveUriToFile(uri: Uri, file: File, callback: CopyFileCallback) {
-        copyFile(contentResolver.openInputStream(uri) ?: throw IOException("open [$uri] io error"), file, callback)
+        copyFile(contentResolver.openInputStream(uri)
+                ?: throw IOException("open [$uri] io error"), file, callback)
     }
 
     private fun copyFile(inputStream: InputStream, outFile: File, callback: CopyFileCallback) {
@@ -323,7 +328,7 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
         if (!dir.exists() || !dir.isDirectory) {
             return
         }
-        for (file in dir.listFiles()) {
+        for (file in dir.listFiles() ?: return) {
             if (file.delete())
                 debug("Delete success: ${file.absolutePath}")
             else
