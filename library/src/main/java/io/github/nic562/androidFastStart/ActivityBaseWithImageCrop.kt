@@ -7,7 +7,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
-import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.provider.MediaStore
@@ -15,7 +14,6 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import com.yalantis.ucrop.UCrop
 import org.jetbrains.anko.*
-import pub.devrel.easypermissions.AfterPermissionGranted
 import java.io.*
 
 /**
@@ -65,12 +63,21 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
         Handler(handlerThread.looper)
     }
 
-    var msgTakePicture = ""
-    var msgAlbum = ""
-    var msgCropWhich = ""
-    var msgCropNeedPermission = ""
-    var msgCropFailed = ""
-    var msgDataError = ""
+    private val msgTakePicture by lazy {
+        getString(R.string.take_picture)
+    }
+    private val msgAlbum by lazy {
+        getString(R.string.album)
+    }
+    private val msgCropWhich by lazy {
+        getString(R.string.picture_from)
+    }
+    private val msgCropNeedPermission by lazy {
+        getString(R.string.picture_operation_need_permissions)
+    }
+    private val msgDataError by lazy {
+        getString(R.string.data_error)
+    }
 
     protected class ImageOption {
         var crop: Boolean = false // 是否裁剪
@@ -83,16 +90,6 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
 
     protected interface CopyFileCallback {
         fun call(file: File?)
-    }
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        msgTakePicture = getString(R.string.take_picture)
-        msgAlbum = getString(R.string.album)
-        msgCropWhich = getString(R.string.picture_from)
-        msgCropNeedPermission = getString(R.string.picture_operation_need_permissions)
-        msgCropFailed = getString(R.string.picture_operation_failed)
-        msgDataError = getString(R.string.data_error)
     }
 
     private fun getDefaultTmpDir(): File {
@@ -111,21 +108,32 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
 
     protected abstract fun onImageReady(tmpFilePath: String)
 
-    @AfterPermissionGranted(REQUEST_CODE_PERMISSIONS)
-    protected fun openImageChoice() {
-        if (hasPermissions(*perms)) {
-            selector(
-                    msgCropWhich,
-                    listOf(msgTakePicture, msgAlbum)
-            ) { _, i ->
-                when (i) {
-                    0 -> openCamera()
-                    1 -> openGallery()
+    private val openImageChoiceRunnable by lazy {
+        object : RunnableWithPermissions {
+            override val authFailedMsg = msgCropNeedPermission
+            override val requestCode = REQUEST_CODE_PERMISSIONS
+            override val permissions = perms
+
+            override fun success() {
+                selector(
+                        msgCropWhich,
+                        listOf(msgTakePicture, msgAlbum)
+                ) { _, i ->
+                    when (i) {
+                        0 -> openCamera()
+                        1 -> openGallery()
+                    }
                 }
             }
-        } else {
-            requestPermissions(msgCropNeedPermission, REQUEST_CODE_PERMISSIONS, *perms)
+
+            override fun failed(deniedPermissions: List<String>) {
+                toast("${getString(R.string.permission_denied)} ${deniedPermissions.joinToString("\n")}")
+            }
         }
+    }
+
+    protected fun openImageChoice() {
+        runWithPermissions(openImageChoiceRunnable)
     }
 
     private fun openCamera() {
@@ -146,22 +154,6 @@ abstract class ActivityBaseWithImageCrop : ActivityBase() {
         val intent = Intent(Intent.ACTION_GET_CONTENT)
         intent.type = "image/*"
         startActivityForResult(intent, REQUEST_CODE_GALLERY)
-    }
-
-    override fun onPermissionsSettingFinish(requestCode: Int, deniedPermissions: List<String>) {
-        if (requestCode == REQUEST_CODE_PERMISSIONS) {
-            if (deniedPermissions.isNotEmpty()) {
-                alert(
-                        msgCropNeedPermission,
-                        msgCropFailed
-                ) {
-                    yesButton { openImageChoice() }
-                    noButton { }
-                }.show()
-            }
-            return
-        }
-        super.onPermissionsSettingFinish(requestCode, deniedPermissions)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {

@@ -4,6 +4,6 @@
     <string name="album">相册</string>
     <string name="picture_from">选择照片来源</string>
     <string name="picture_operation_need_permissions">图片操作需要以下权限</string>
-    <string name="picture_operation_failed">图片操作失败</string>
     <string name="data_error">数据错误</string>
+    <string name="permission_denied">权限被拒绝：</string>
 </resources>

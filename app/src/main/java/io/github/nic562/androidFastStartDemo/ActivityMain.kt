@@ -11,8 +11,6 @@ import org.jetbrains.anko.toast
  */
 class ActivityMain : ActivityBaseWithInitPermission() {
 
-    private val pms = arrayOf(android.Manifest.permission.READ_PHONE_STATE)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -22,17 +20,18 @@ class ActivityMain : ActivityBaseWithInitPermission() {
         }
     }
 
-    override fun getInitPermissions(): Array<String>? {
-        return pms
-    }
+    override val initPermissionsRunnable = object: RunnableWithPermissions {
+        override val authFailedMsg = "软件启动所需权限"
+        override val requestCode = 9999
+        override val permissions = arrayOf(android.Manifest.permission.READ_PHONE_STATE)
 
-    override fun getInitPermissionsDescriptions(): String {
-        return "软件启动所需权限"
-    }
+        override fun success() {
+            toast("授权成功！")
+        }
 
-    override fun onInitPermissionsFinish(deniedPermissions: List<String>) {
-        if (deniedPermissions.isNotEmpty()) {
-            toast("授权失败: ${pms.joinToString("\n")}")
+        override fun failed(deniedPermissions: List<String>) {
+            toast("授权失败: ${deniedPermissions.joinToString("\n")}")
+            finish()
         }
     }
 }
