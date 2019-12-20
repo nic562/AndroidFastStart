@@ -5,7 +5,7 @@ import android.database.Cursor
 import android.os.Bundle
 import android.provider.Telephony
 import androidx.recyclerview.widget.RecyclerView
-import io.github.nic562.androidFastStart.ActivityBaseWithInitPermission
+import io.github.nic562.androidFastStart.ActivityBase
 import io.github.nic562.androidFastStart.SomethingListable
 import kotlinx.android.synthetic.main.activity_sms.*
 import org.jetbrains.anko.toast
@@ -15,7 +15,7 @@ import java.util.*
 /**
  * Created by Nic on 2019/12/20.
  */
-class ActivitySMS : ActivityBaseWithInitPermission(), SomethingListable<SMS> {
+class ActivitySMS : ActivityBase(), SomethingListable<SMS> {
 
     override val listableManager = object : SomethingListable.ListableManager<SMS>() {
         override val listItemLayoutID = R.layout.layout_sms_item
@@ -45,6 +45,7 @@ class ActivitySMS : ActivityBaseWithInitPermission(), SomethingListable<SMS> {
                 cur = contentResolver.query(Telephony.Sms.CONTENT_URI, null, null, null, null)
                         ?: return
                 totalCount = cur.count
+                cur.close()
 
                 cur = contentResolver.query(
                         Telephony.Sms.CONTENT_URI,
@@ -81,16 +82,19 @@ class ActivitySMS : ActivityBaseWithInitPermission(), SomethingListable<SMS> {
         }
     }
 
-    override val initPermissionsRunnable = object : RunnableWithPermissions {
+    private val loadSMSWithPermission = object : RunnableWithPermissions {
         override val authFailedMsg = "读取短信需要这些权限"
         override val requestCode = 999
         override val permissions = arrayOf(
-                android.Manifest.permission.READ_SMS,
-                android.Manifest.permission.RECEIVE_SMS)
+                android.Manifest.permission.READ_SMS)
 
         override fun success() {
-            toast("授权成功！")
-            btn_read.isEnabled = true
+            toast("授权成功!")
+            listableManager.reloadData()
+        }
+
+        override fun failed(deniedPermissions: List<String>) {
+            toast("授权失败!")
         }
     }
 
@@ -105,11 +109,11 @@ class ActivitySMS : ActivityBaseWithInitPermission(), SomethingListable<SMS> {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sms)
-        btn_read.isEnabled = false
         btn_read.setOnClickListener {
-            listableManager.reloadData()
+            runWithPermissions(loadSMSWithPermission)
         }
         initListable()
+        listableManager.setEmptyView(R.layout.layout_list_empty)
     }
 
 }

@@ -85,7 +85,7 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger {
         }
     }
 
-    private fun hasPermissions(vararg permissions: String): Boolean {
+    protected fun hasPermissions(vararg permissions: String): Boolean {
         if (permissions.isEmpty()) {
             return true
         }
