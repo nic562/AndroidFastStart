@@ -31,10 +31,18 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation"org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "androidx.appcompat:appcompat:$androidx_version"
 
     implementation 'com.github.yalantis:ucrop:2.2.2-native'
     implementation 'pub.devrel:easypermissions:3.0.0'
+
+    // https://github.com/CymChad/BaseRecyclerViewAdapterHelper
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.0-beta1'
+
+    api "androidx.recyclerview:recyclerview:$androidx_version"
+    // https://github.com/Kotlin/anko
     api "org.jetbrains.anko:anko-commons:$anko_version"
+    // Anko Layouts
+    api "org.jetbrains.anko:anko-sdk25:$anko_version"
 }

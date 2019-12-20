@@ -19,31 +19,6 @@ dependencies {
 ### Activity Start
 - 集成 Anko commons组件，可直接使用其AnkoLogger工具 以及 权限请求相关功能
 ```java
-/**
-* 不建议这样写，已经简化了流程请参考下一段代码
-*/
-class SomeActivity extends ActivityBase {
-    public doSomething() {
-        debug("debug...");
-        info("info...");
-        error("error...");
-        toast("toast...");
-        if (hasPermissions(permissions)){
-            // TODO
-        } else {
-            requestPermissions(permissions);
-        }
-    }
-    @override
-    public void onPermissionsGranted(){}
-    @Override
-    public void onPermissionsDenied() {}
-    
-}
-
-/**
-* 建议这样写
-*/
 class SomeActivity extends ActivityBase {
     RunnableWithPermissions runnableWithPermissions = new RunnableWithPermissions() {
         String authFailedMsg = "软件所需权限";
@@ -54,6 +29,9 @@ class SomeActivity extends ActivityBase {
         void success() {
             toast("授权成功！");
         }
+        
+        @override
+        void failed(List<String> deniedPermissions) {}
     };
     
     void doSomething() {

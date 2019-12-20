@@ -19,7 +19,7 @@ import pub.devrel.easypermissions.EasyPermissions
  *
  * Created by Nic on 2018/10/10.
  */
-abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.PermissionCallbacks {
+abstract class ActivityBase : AppCompatActivity(), AnkoLogger {
 
     private val deniedPermissions = ArrayList<String>()
 
@@ -31,6 +31,44 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
         val permissions: Array<String>
         fun success()
         fun failed(deniedPermissions: List<String>) {}
+    }
+
+    private val permissionCallback = object : EasyPermissions.PermissionCallbacks {
+        /**
+         * 部分授权也会调用
+         */
+        override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
+            val r = mapRunnableWithPermissions[requestCode]
+            if (r != null) {
+                if (r.permissions.size == perms.size) {
+                    r.success()
+                    onPermissionsSettingFinish(requestCode)
+                }
+            }
+        }
+
+        /**
+         * 部分拒绝授权也会调用
+         */
+        override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
+            deniedPermissions.clear()
+            deniedPermissions.addAll(perms)
+            // 对应权限没有被授权并且设置为不再询问的, 再次打开对话框提醒用户
+            if (EasyPermissions.somePermissionPermanentlyDenied(this@ActivityBase, perms)) {
+                latestPermissionSettingRequestCode = requestCode // 保持这个请求号，以便子类再继续处理该情况
+                AppSettingsDialog.Builder(this@ActivityBase).build().show()
+            } else {
+                val r = mapRunnableWithPermissions[requestCode]
+                if (r != null) {
+                    r.failed(perms)
+                    onPermissionsSettingFinish(requestCode)
+                }
+            }
+        }
+
+        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+            EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+        }
     }
 
     private val mapRunnableWithPermissions = mutableMapOf<Int, RunnableWithPermissions>()
@@ -47,52 +85,20 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
         }
     }
 
-    protected fun hasPermissions(vararg permissions: String): Boolean {
+    private fun hasPermissions(vararg permissions: String): Boolean {
         if (permissions.isEmpty()) {
             return true
         }
         return EasyPermissions.hasPermissions(this, *permissions)
     }
 
-    protected fun requestPermissions(msg: String, requestCode: Int, vararg perms: String) {
+    private fun requestPermissions(msg: String, requestCode: Int, vararg perms: String) {
         EasyPermissions.requestPermissions(this, msg, requestCode, *perms)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
-    }
-
-    /**
-     * 部分授权也会调用
-     */
-    override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
-        val r = mapRunnableWithPermissions[requestCode]
-        if (r != null) {
-            if (r.permissions.size == perms.size) {
-                r.success()
-                onPermissionsSettingFinish(requestCode)
-            }
-        }
-    }
-
-    /**
-     * 部分拒绝授权也会调用
-     */
-    override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
-        deniedPermissions.clear()
-        deniedPermissions.addAll(perms)
-        // 对应权限没有被授权并且设置为不再询问的, 再次打开对话框提醒用户
-        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
-            latestPermissionSettingRequestCode = requestCode // 保持这个请求号，以便子类再继续处理该情况
-            AppSettingsDialog.Builder(this).build().show()
-        } else {
-            val r = mapRunnableWithPermissions[requestCode]
-            if (r != null) {
-                r.failed(perms)
-                onPermissionsSettingFinish(requestCode)
-            }
-        }
+        permissionCallback.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -111,7 +117,7 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger, EasyPermissions.P
             }
             deniedPermissions.clear()
             if (dms.size > 0) {
-                onPermissionsDenied(latestPermissionSettingRequestCode, dms)
+                permissionCallback.onPermissionsDenied(latestPermissionSettingRequestCode, dms)
             } else {
                 val r = mapRunnableWithPermissions[latestPermissionSettingRequestCode]
                 if (r != null) {

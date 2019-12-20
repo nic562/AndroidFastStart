@@ -18,6 +18,10 @@ class ActivityMain : ActivityBaseWithInitPermission() {
         btn_crop.setOnClickListener {
             startActivity(intentFor<ActivityCropImage>())
         }
+
+        btn_sms.setOnClickListener {
+            startActivity(intentFor<ActivitySMS>())
+        }
     }
 
     override val initPermissionsRunnable = object: RunnableWithPermissions {
