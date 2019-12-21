@@ -12,7 +12,7 @@ allprojects {
 ### module build.gradle
 ```gradle
 dependencies {
-    implementation 'com.github.nic562:AndroidFastStart:0.5'
+    implementation 'com.github.nic562:AndroidFastStart:0.6'
 }
 ```
 
