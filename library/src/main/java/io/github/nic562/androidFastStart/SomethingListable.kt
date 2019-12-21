@@ -2,13 +2,16 @@ package io.github.nic562.androidFastStart
 
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.view.LayoutInflater
 import android.view.View
+import android.widget.LinearLayout
 import androidx.annotation.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.chad.library.adapter.base.module.LoadMoreModule
 import com.chad.library.adapter.base.viewholder.BaseViewHolder
+import java.util.LinkedHashSet
 
 /**
  * 实现循环列表展示数据功能接口
@@ -58,68 +61,83 @@ interface SomethingListable<T> : SomethingWithContext {
         fun onError()
     }
 
-    class ViewHolder {
+    interface ViewHelper {
+        fun <T : View> getView(@IdRes viewId: Int): T
+        fun setText(@IdRes viewId: Int, value: CharSequence?): ViewHelper
+        fun setText(@IdRes viewId: Int, @StringRes strId: Int): ViewHelper?
+        fun setTextColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper
+        fun setTextColorRes(@IdRes viewId: Int, @ColorRes colorRes: Int): ViewHelper
+        fun setImageResource(@IdRes viewId: Int, @DrawableRes imageResId: Int): ViewHelper
+        fun setImageDrawable(@IdRes viewId: Int, drawable: Drawable?): ViewHelper?
+        fun setImageBitmap(@IdRes viewId: Int, bitmap: Bitmap?): ViewHelper?
+        fun setBackgroundColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper?
+        fun setBackgroundResource(@IdRes viewId: Int, @DrawableRes backgroundRes: Int): ViewHelper?
+        fun setVisible(@IdRes viewId: Int, isVisible: Boolean): ViewHelper
+        fun setGone(@IdRes viewId: Int, isGone: Boolean): ViewHelper
+    }
+
+    private class ViewHolder : ViewHelper {
         private var holder: BaseViewHolder? = null
 
         fun setHolder(hd: BaseViewHolder) {
             holder = hd
         }
 
-        fun <T : View> getView(@IdRes viewId: Int): T {
+        override fun <T : View> getView(@IdRes viewId: Int): T {
             return holder!!.getView(viewId)
         }
 
-        fun setText(@IdRes viewId: Int, value: CharSequence?): ViewHolder {
+        override fun setText(@IdRes viewId: Int, value: CharSequence?): ViewHelper {
             holder!!.setText(viewId, value)
             return this
         }
 
-        fun setText(@IdRes viewId: Int, @StringRes strId: Int): ViewHolder? {
+        override fun setText(@IdRes viewId: Int, @StringRes strId: Int): ViewHelper? {
             holder!!.setText(viewId, strId)
             return this
         }
 
-        fun setTextColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHolder {
+        override fun setTextColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper {
             holder!!.setTextColor(viewId, color)
             return this
         }
 
-        fun setTextColorRes(@IdRes viewId: Int, @ColorRes colorRes: Int): ViewHolder {
+        override fun setTextColorRes(@IdRes viewId: Int, @ColorRes colorRes: Int): ViewHelper {
             holder!!.setTextColorRes(viewId, colorRes)
             return this
         }
 
-        fun setImageResource(@IdRes viewId: Int, @DrawableRes imageResId: Int): ViewHolder {
+        override fun setImageResource(@IdRes viewId: Int, @DrawableRes imageResId: Int): ViewHelper {
             holder!!.setImageResource(viewId, imageResId)
             return this
         }
 
-        fun setImageDrawable(@IdRes viewId: Int, drawable: Drawable?): ViewHolder? {
+        override fun setImageDrawable(@IdRes viewId: Int, drawable: Drawable?): ViewHelper? {
             holder!!.setImageDrawable(viewId, drawable)
             return this
         }
 
-        fun setImageBitmap(@IdRes viewId: Int, bitmap: Bitmap?): ViewHolder? {
+        override fun setImageBitmap(@IdRes viewId: Int, bitmap: Bitmap?): ViewHelper? {
             holder!!.setImageBitmap(viewId, bitmap)
             return this
         }
 
-        fun setBackgroundColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHolder? {
+        override fun setBackgroundColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper? {
             holder!!.setBackgroundColor(viewId, color)
             return this
         }
 
-        fun setBackgroundResource(@IdRes viewId: Int, @DrawableRes backgroundRes: Int): ViewHolder? {
+        override fun setBackgroundResource(@IdRes viewId: Int, @DrawableRes backgroundRes: Int): ViewHelper? {
             holder!!.setBackgroundResource(viewId, backgroundRes)
             return this
         }
 
-        fun setVisible(@IdRes viewId: Int, isVisible: Boolean): ViewHolder {
+        override fun setVisible(@IdRes viewId: Int, isVisible: Boolean): ViewHelper {
             holder!!.setVisible(viewId, isVisible)
             return this
         }
 
-        fun setGone(@IdRes viewId: Int, isGone: Boolean): ViewHolder {
+        override fun setGone(@IdRes viewId: Int, isGone: Boolean): ViewHelper {
             holder!!.setGone(viewId, isGone)
             return this
         }
@@ -138,6 +156,8 @@ interface SomethingListable<T> : SomethingWithContext {
         abstract val listItemLayoutID: Int
 
         private val viewHolder = ViewHolder()
+
+        private var recyclerView: RecyclerView? = null
 
         private val adapter: Adapter<T> by lazy {
             val a = object : Adapter<T>(listItemLayoutID, dataList) {
@@ -177,7 +197,7 @@ interface SomethingListable<T> : SomethingWithContext {
             }
         }
 
-        abstract fun itemConvert(helper: ViewHolder, item: T)
+        abstract fun itemConvert(helper: ViewHelper, item: T)
 
         abstract fun loadData(page: Int, limit: Int,
                               dataCallback: OnLoadDataCallback<T>)
@@ -186,8 +206,17 @@ interface SomethingListable<T> : SomethingWithContext {
             loadData(page, limit, onLoadDataCallback)
         }
 
+        private fun createView(@LayoutRes resID: Int): View {
+            if (recyclerView != null) {
+                return LayoutInflater.from(recyclerView!!.context).inflate(resID, recyclerView, false)
+            } else {
+                throw RuntimeException("View container had not been provide! Please call `setViewContainer()` first.")
+            }
+        }
+
         fun setViewContainer(recyclerView: RecyclerView) {
             recyclerView.adapter = adapter
+            this.recyclerView = recyclerView
         }
 
         fun clearData() {
@@ -211,12 +240,90 @@ interface SomethingListable<T> : SomethingWithContext {
             adapter.notifyDataSetChanged()
         }
 
-        fun setEmptyView(resID: Int) {
+        fun setEmptyView(@LayoutRes resID: Int) {
             adapter.setEmptyView(resID)
         }
 
         fun setEmptyView(v: View) {
             adapter.setEmptyView(v)
+        }
+
+        fun addHeaderView(@LayoutRes resID: Int, index: Int = -1, orientation: Int = LinearLayout.VERTICAL): View {
+            val v = createView(resID)
+            adapter.addHeaderView(v, index, orientation)
+            return v
+        }
+
+        fun addHeaderView(view: View, index: Int = -1, orientation: Int = LinearLayout.VERTICAL) {
+            adapter.addHeaderView(view, index, orientation)
+        }
+
+        fun setHeaderView(@LayoutRes resID: Int, index: Int = 0, orientation: Int = LinearLayout.VERTICAL): View {
+            val v = createView(resID)
+            adapter.setHeaderView(v, index, orientation)
+            return v
+        }
+
+        fun setHeaderView(view: View, index: Int = 0, orientation: Int = LinearLayout.VERTICAL) {
+            adapter.setHeaderView(view, index, orientation)
+        }
+
+        fun hasHeaderLayout(): Boolean {
+            return adapter.hasHeaderLayout()
+        }
+
+        fun removeHeaderView(header: View) {
+            adapter.removeHeaderView(header)
+        }
+
+        fun removeAllHeaderView() {
+            adapter.removeAllHeaderView()
+        }
+
+        fun addFooterView(@LayoutRes resID: Int, index: Int = -1, orientation: Int = LinearLayout.VERTICAL): View {
+            val v = createView(resID)
+            adapter.addFooterView(v, index, orientation)
+            return v
+        }
+
+        fun addFooterView(view: View, index: Int = -1, orientation: Int = LinearLayout.VERTICAL) {
+            adapter.addFooterView(view, index, orientation)
+        }
+
+        fun setFooterView(@LayoutRes resID: Int, index: Int = 0, orientation: Int = LinearLayout.VERTICAL): View {
+            val v = createView(resID)
+            adapter.setFooterView(v, index, orientation)
+            return v
+        }
+
+        fun setFooterView(view: View, index: Int = 0, orientation: Int = LinearLayout.VERTICAL) {
+            adapter.setFooterView(view, index, orientation)
+        }
+
+        fun hasFooterLayout(): Boolean {
+            return adapter.hasFooterLayout()
+        }
+
+        fun removeFooterView(footer: View) {
+            adapter.removeFooterView(footer)
+        }
+
+        fun removeAllFooterView() {
+            adapter.removeAllFooterView()
+        }
+
+        /**
+         * 当显示空布局时，是否显示 头布局
+         */
+        fun setHeaderWithEmptyEnable(boolean: Boolean) {
+            adapter.headerWithEmptyEnable = boolean
+        }
+
+        /**
+         * 当显示空布局时，是否显示 脚布局
+         */
+        fun setFooterWithEmptyEnable(boolean: Boolean) {
+            adapter.footerWithEmptyEnable = boolean
         }
 
         fun setItemClickListener(listener: OnItemClickListener) {
@@ -241,6 +348,18 @@ interface SomethingListable<T> : SomethingWithContext {
             adapter.setOnItemChildLongClickListener { _, view, position ->
                 return@setOnItemChildLongClickListener listener.onItemChildLongClick(view, position)
             }
+        }
+
+        fun addChildClickViewIds(@IdRes vararg viewIds: Int) {
+            adapter.addChildClickViewIds(*viewIds)
+        }
+
+        fun getChildLongClickViewIds(): LinkedHashSet<Int> {
+            return adapter.getChildLongClickViewIds()
+        }
+
+        fun setAnimationEnable(boolean: Boolean) {
+            adapter.animationEnable = boolean
         }
     }
 

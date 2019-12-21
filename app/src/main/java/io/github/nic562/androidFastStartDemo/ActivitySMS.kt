@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.Cursor
 import android.os.Bundle
 import android.provider.Telephony
+import android.view.View
 import androidx.recyclerview.widget.RecyclerView
 import io.github.nic562.androidFastStart.ActivityBase
 import io.github.nic562.androidFastStart.SomethingListable
@@ -20,7 +21,7 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS> {
     override val listableManager = object : SomethingListable.ListableManager<SMS>() {
         override val listItemLayoutID = R.layout.layout_sms_item
 
-        override fun itemConvert(helper: SomethingListable.ViewHolder, item: SMS) {
+        override fun itemConvert(helper: SomethingListable.ViewHelper, item: SMS) {
             with(helper) {
                 setText(R.id.tv_id, item.id)
                 setText(R.id.tv_body, item.body)
@@ -113,7 +114,25 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS> {
             runWithPermissions(loadSMSWithPermission)
         }
         initListable()
-        listableManager.setEmptyView(R.layout.layout_list_empty)
+        with(listableManager) {
+            setEmptyView(R.layout.layout_list_empty)
+            addHeaderView(R.layout.layout_header)
+            addFooterView(R.layout.layout_footer)
+            setFooterWithEmptyEnable(true)
+            setHeaderWithEmptyEnable(true)
+            setAnimationEnable(true)
+            setItemClickListener(object : SomethingListable.OnItemClickListener {
+                override fun onItemClick(view: View, position: Int) {
+                    println("[click view]: ${view} >> position: ${position}")
+                }
+            })
+            addChildClickViewIds(R.id.tv_id, R.id.tv_number)
+            setItemChildClickListener(object : SomethingListable.OnItemChildClickListener {
+                override fun onItemChildClick(view: View, position: Int) {
+                    println("[click child view]: ${view} >>> position: ${position}")
+                }
+            })
+        }
     }
 
 }
