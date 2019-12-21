@@ -1,5 +1,10 @@
+## About AndroidFastStart
 
-### root build.gradle
+该项目主要根据个人使用习惯集成一些比较好用的库，以便快速方便搭建新的Android项目开发任务
+
+## Howto
+
+### project build.gradle
 ```gradle
 allprojects {
     repositories {
@@ -56,7 +61,7 @@ class SomeActivity extends ActivityBaseWithImageCrop {
 }
 ```
 
-- 封装灵活方便的 [BRVAH] RecyclerView
+- 基于 [BRVAH] 封装，使用灵活方便的 RecyclerView，可用于快速构建复杂的数据集展示，自动增量加载等
 ```kotlin
 class SomeActivity : SomethingListable<SomeItem> {
     override val listableManager = object : SomethingListable.ListableManager<SomeItem>() {
