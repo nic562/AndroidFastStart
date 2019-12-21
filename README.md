@@ -16,7 +16,7 @@ dependencies {
 }
 ```
 
-### Activity Start
+### Start
 - 集成 Anko commons组件，可直接使用其AnkoLogger工具 以及 权限请求相关功能
 ```java
 class SomeActivity extends ActivityBase {
@@ -40,7 +40,7 @@ class SomeActivity extends ActivityBase {
 }
 ```
 
-- 集成运行时权限检查以及权限请求相关的api
+- 集成启动时权限检查以及权限请求相关的api
 ```java
 class SomeActivity extends ActivityBaseWithInitPermission {
     RunnableWithPermissions initPermissionsRunnable = new RunnableWithPermissions();
@@ -54,4 +54,18 @@ class SomeActivity extends ActivityBaseWithImageCrop {
     getImageOption();
     onImageReady();
 }
+```
+
+- 封装灵活方便的 [BRVAH] RecyclerView
+```kotlin
+class SomeActivity : SomethingListable<SomeItem> {
+    override val listableManager = object : SomethingListable.ListableManager<SomeItem>() {
+        ...
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        ...
+        
+        initListable(recyclerView)
+    }
+} 
 ```

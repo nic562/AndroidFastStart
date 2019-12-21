@@ -22,16 +22,14 @@ import java.util.LinkedHashSet
  */
 interface SomethingListable<T> : SomethingWithContext {
 
-    fun getListableRecyclerView(): RecyclerView
-
     val listableManager: ListableManager<T>
 
     /**
      * 获取多数情况下通用的垂直布局LayoutManager
      *
-     * 可根据实际应用重写该方法
      */
-    fun getListableLayoutManager(): RecyclerView.LayoutManager {
+    private
+    fun getDefaultListableLayoutManager(): RecyclerView.LayoutManager {
         val lm = LinearLayoutManager(getOwnerContext())
         lm.orientation = LinearLayoutManager.VERTICAL
         return lm
@@ -363,9 +361,8 @@ interface SomethingListable<T> : SomethingWithContext {
         }
     }
 
-    fun initListable() {
-        val rv = getListableRecyclerView()
-        rv.layoutManager = getListableLayoutManager()
-        listableManager.setViewContainer(rv)
+    fun initListable(recyclerView: RecyclerView, layoutManager: RecyclerView.LayoutManager = getDefaultListableLayoutManager()) {
+        recyclerView.layoutManager = layoutManager
+        listableManager.setViewContainer(recyclerView)
     }
 }

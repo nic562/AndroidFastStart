@@ -5,7 +5,6 @@ import android.database.Cursor
 import android.os.Bundle
 import android.provider.Telephony
 import android.view.View
-import androidx.recyclerview.widget.RecyclerView
 import io.github.nic562.androidFastStart.ActivityBase
 import io.github.nic562.androidFastStart.SomethingListable
 import kotlinx.android.synthetic.main.activity_sms.*
@@ -99,10 +98,6 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS> {
         }
     }
 
-    override fun getListableRecyclerView(): RecyclerView {
-        return rv_sms
-    }
-
     override fun getOwnerContext(): Context {
         return this
     }
@@ -113,7 +108,7 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS> {
         btn_read.setOnClickListener {
             runWithPermissions(loadSMSWithPermission)
         }
-        initListable()
+        initListable(rv_sms)
         with(listableManager) {
             setEmptyView(R.layout.layout_list_empty)
             addHeaderView(R.layout.layout_header)
