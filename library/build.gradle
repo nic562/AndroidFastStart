@@ -45,6 +45,8 @@ dependencies {
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.0-beta1'
 
     api "androidx.recyclerview:recyclerview:$androidx_version"
+    api "androidx.recyclerview:recyclerview-selection:1.0.0"
+
     // https://github.com/Kotlin/anko
     api "org.jetbrains.anko:anko-commons:$anko_version"
     // Anko Layouts

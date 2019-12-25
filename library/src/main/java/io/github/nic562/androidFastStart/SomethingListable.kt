@@ -1,7 +1,5 @@
 package io.github.nic562.androidFastStart
 
-import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.LinearLayout
@@ -10,19 +8,23 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.chad.library.adapter.base.module.LoadMoreModule
-import com.chad.library.adapter.base.viewholder.BaseViewHolder
+import io.github.nic562.androidFastStart.viewholder.ViewHolder
+import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
+import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.warn
 import java.util.LinkedHashSet
 
 /**
- * 实现循环列表展示数据功能接口
+ * 实现基于RecyclerView的序列数据展示功能接口
  *
- *
+ * <T, K> 中： T 为 序列数据的类型； K 为 序列数据跟踪器（可重写 getItemDetailsProvider） ItemDetails 的关键字段数据类型
  *
  * Created by Nic on 2019/12/20.
  */
-interface SomethingListable<T> : SomethingWithContext {
+interface SomethingListable<T, K> : SomethingWithContext {
 
-    val listableManager: ListableManager<T>
+    val listableManager: ListableManager<T, K>
 
     /**
      * 获取多数情况下通用的垂直布局LayoutManager
@@ -34,9 +36,6 @@ interface SomethingListable<T> : SomethingWithContext {
         lm.orientation = LinearLayoutManager.VERTICAL
         return lm
     }
-
-    private abstract class Adapter<T>(layoutID: Int, dataList: MutableList<T>) :
-            BaseQuickAdapter<T, BaseViewHolder>(layoutID, dataList), LoadMoreModule
 
     interface OnItemClickListener {
         fun onItemClick(view: View, position: Int)
@@ -59,89 +58,7 @@ interface SomethingListable<T> : SomethingWithContext {
         fun onError()
     }
 
-    interface ViewHelper {
-        fun <T : View> getView(@IdRes viewId: Int): T
-        fun setText(@IdRes viewId: Int, value: CharSequence?): ViewHelper
-        fun setText(@IdRes viewId: Int, @StringRes strId: Int): ViewHelper?
-        fun setTextColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper
-        fun setTextColorRes(@IdRes viewId: Int, @ColorRes colorRes: Int): ViewHelper
-        fun setImageResource(@IdRes viewId: Int, @DrawableRes imageResId: Int): ViewHelper
-        fun setImageDrawable(@IdRes viewId: Int, drawable: Drawable?): ViewHelper?
-        fun setImageBitmap(@IdRes viewId: Int, bitmap: Bitmap?): ViewHelper?
-        fun setBackgroundColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper?
-        fun setBackgroundResource(@IdRes viewId: Int, @DrawableRes backgroundRes: Int): ViewHelper?
-        fun setVisible(@IdRes viewId: Int, isVisible: Boolean): ViewHelper
-        fun setGone(@IdRes viewId: Int, isGone: Boolean): ViewHelper
-    }
-
-    private class ViewHolder : ViewHelper {
-        private var holder: BaseViewHolder? = null
-
-        fun setHolder(hd: BaseViewHolder) {
-            holder = hd
-        }
-
-        override fun <T : View> getView(@IdRes viewId: Int): T {
-            return holder!!.getView(viewId)
-        }
-
-        override fun setText(@IdRes viewId: Int, value: CharSequence?): ViewHelper {
-            holder!!.setText(viewId, value)
-            return this
-        }
-
-        override fun setText(@IdRes viewId: Int, @StringRes strId: Int): ViewHelper? {
-            holder!!.setText(viewId, strId)
-            return this
-        }
-
-        override fun setTextColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper {
-            holder!!.setTextColor(viewId, color)
-            return this
-        }
-
-        override fun setTextColorRes(@IdRes viewId: Int, @ColorRes colorRes: Int): ViewHelper {
-            holder!!.setTextColorRes(viewId, colorRes)
-            return this
-        }
-
-        override fun setImageResource(@IdRes viewId: Int, @DrawableRes imageResId: Int): ViewHelper {
-            holder!!.setImageResource(viewId, imageResId)
-            return this
-        }
-
-        override fun setImageDrawable(@IdRes viewId: Int, drawable: Drawable?): ViewHelper? {
-            holder!!.setImageDrawable(viewId, drawable)
-            return this
-        }
-
-        override fun setImageBitmap(@IdRes viewId: Int, bitmap: Bitmap?): ViewHelper? {
-            holder!!.setImageBitmap(viewId, bitmap)
-            return this
-        }
-
-        override fun setBackgroundColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper? {
-            holder!!.setBackgroundColor(viewId, color)
-            return this
-        }
-
-        override fun setBackgroundResource(@IdRes viewId: Int, @DrawableRes backgroundRes: Int): ViewHelper? {
-            holder!!.setBackgroundResource(viewId, backgroundRes)
-            return this
-        }
-
-        override fun setVisible(@IdRes viewId: Int, isVisible: Boolean): ViewHelper {
-            holder!!.setVisible(viewId, isVisible)
-            return this
-        }
-
-        override fun setGone(@IdRes viewId: Int, isGone: Boolean): ViewHelper {
-            holder!!.setGone(viewId, isGone)
-            return this
-        }
-    }
-
-    abstract class ListableManager<T> {
+    abstract class ListableManager<T, K> {
         var totalCount = 0
             private set
 
@@ -153,17 +70,57 @@ interface SomethingListable<T> : SomethingWithContext {
 
         abstract val listItemLayoutID: Int
 
-        private val viewHolder = ViewHolder()
-
         private var recyclerView: RecyclerView? = null
 
-        private val adapter: Adapter<T> by lazy {
-            val a = object : Adapter<T>(listItemLayoutID, dataList) {
-                override fun convert(helper: BaseViewHolder, item: T?) {
+        private abstract class Adapter<T, K>(layoutID: Int, dataList: MutableList<T>) :
+                BaseQuickAdapter<T, ViewHolder<K>>(layoutID, dataList), LoadMoreModule, AnkoLogger {
+            override fun onBindViewHolder(holder: ViewHolder<K>, position: Int) {
+                bindItemDetails(holder, position)
+                super.onBindViewHolder(holder, position)
+            }
+
+            override fun onBindViewHolder(holder: ViewHolder<K>, position: Int, payloads: MutableList<Any>) {
+                bindItemDetails(holder, position)
+                super.onBindViewHolder(holder, position, payloads)
+            }
+
+            private fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
+                if (holder.itemDetailsProvider == null) {
+                    holder.itemDetailsProvider = getItemDetailsProvider()
+                }
+                holder.getItemDetails()?.position = position
+            }
+
+            abstract fun getItemDetailsProvider(): ItemDetailsProvider<K>?
+
+            /**
+             * 必须重写该方法
+             *
+             * selectionTracker 的事件触发调用了onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>)
+             *
+             * 父类实现并没有实现该方法，造成selectionTracker 触发后UI上无更新
+             *
+             * @param payloads 如果是 selectionTracker 触发的，会相应到一个 `Selection-Changed` 的字符串
+             * 官方RecyclerView.Adapter 源码中的
+             * onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) 也直接忽略了 payloads参数而，所以本实现也依照该方式。
+             * 这可能需要 或者针对不同的事件做不同响应，暂时无法预料，先留坑。
+             */
+            override fun convert(helper: ViewHolder<K>, item: T?, payloads: List<Any>) {
+                warn("onBindViewHolder with playLoads ::: $payloads ${payloads[0].javaClass}")
+                convert(helper, item)
+            }
+        }
+
+        private val adapter: Adapter<T, K> by lazy {
+            val a = object : Adapter<T, K>(listItemLayoutID, dataList) {
+                override fun convert(helper: ViewHolder<K>, item: T?) {
                     if (item != null) {
-                        viewHolder.setHolder(helper)
-                        itemConvert(viewHolder, item)
+                        itemConvert(helper, item)
                     }
+                }
+
+                override fun getItemDetailsProvider(): ItemDetailsProvider<K>? {
+                    return this@ListableManager.getItemDetailsProvider()
                 }
             }
 
@@ -195,7 +152,11 @@ interface SomethingListable<T> : SomethingWithContext {
             }
         }
 
-        abstract fun itemConvert(helper: ViewHelper, item: T)
+        open fun getItemDetailsProvider(): ItemDetailsProvider<K>? {
+            return null
+        }
+
+        abstract fun itemConvert(helper: ViewHelper<K>, item: T)
 
         abstract fun loadData(page: Int, limit: Int,
                               dataCallback: OnLoadDataCallback<T>)
@@ -226,6 +187,10 @@ interface SomethingListable<T> : SomethingWithContext {
         fun reloadData() {
             clearData()
             myLoadData(currPage, limit)
+        }
+
+        fun notifyDataSetChanged() {
+            adapter.notifyDataSetChanged()
         }
 
         fun removeData(position: Int) {

@@ -22,6 +22,14 @@ class ActivityMain : ActivityBaseWithInitPermission() {
         btn_sms.setOnClickListener {
             startActivity(intentFor<ActivitySMS>())
         }
+
+        btn_card.setOnClickListener {
+            startActivity(intentFor<ActivityCard>())
+        }
+
+        btn_card_raw.setOnClickListener {
+            startActivity(intentFor<ActivityCardRaw>())
+        }
     }
 
     override val initPermissionsRunnable = object: RunnableWithPermissions {

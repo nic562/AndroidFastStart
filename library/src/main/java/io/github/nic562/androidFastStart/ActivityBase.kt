@@ -2,7 +2,7 @@ package io.github.nic562.androidFastStart
 
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
-import org.jetbrains.anko.*
+import org.jetbrains.anko.AnkoLogger
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 

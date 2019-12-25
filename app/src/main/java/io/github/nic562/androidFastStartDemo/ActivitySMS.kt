@@ -4,29 +4,83 @@ import android.content.Context
 import android.database.Cursor
 import android.os.Bundle
 import android.provider.Telephony
+import android.view.MotionEvent
 import android.view.View
+import android.widget.CheckedTextView
+import androidx.recyclerview.selection.*
 import io.github.nic562.androidFastStart.ActivityBase
 import io.github.nic562.androidFastStart.SomethingListable
+import io.github.nic562.androidFastStart.viewholder.ItemDetails
+import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
+import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 import kotlinx.android.synthetic.main.activity_sms.*
 import org.jetbrains.anko.toast
 import java.lang.Exception
-import java.util.*
+import java.util.Date
 
 /**
  * Created by Nic on 2019/12/20.
  */
-class ActivitySMS : ActivityBase(), SomethingListable<SMS> {
+class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
 
-    override val listableManager = object : SomethingListable.ListableManager<SMS>() {
-        override val listItemLayoutID = R.layout.layout_sms_item
+    private val selectionTracker by lazy {
+        SelectionTracker.Builder<Long>(
+                "my_selection",
+                rv_sms,
+                object : ItemKeyProvider<Long>(SCOPE_MAPPED) {
+                    override fun getKey(position: Int): Long {
+                        return position.toLong()
+                    }
 
-        override fun itemConvert(helper: SomethingListable.ViewHelper, item: SMS) {
+                    override fun getPosition(key: Long): Int {
+                        return key.toInt()
+                    }
+                },
+                object : ItemDetailsLookup<Long>() {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun getItemDetails(e: MotionEvent): ItemDetails<Long>? {
+                        println("??????? get item details!!! ${e.action}")
+                        val v = rv_sms.findChildViewUnder(e.x, e.y)
+                        if (v != null) {
+                            val viewHolder = rv_sms.getChildViewHolder(v)
+                            return (viewHolder as ViewHelper<Long>).getItemDetails()
+                        }
+                        return null
+                    }
+                },
+                StorageStrategy.createLongStorage()
+        ).withSelectionPredicate(SelectionPredicates.createSelectAnything<Long>()).build()
+    }
+
+    override val listableManager = object : SomethingListable.ListableManager<SMS, Long>() {
+        override val listItemLayoutID = R.layout.layout_item_sms
+
+        override fun itemConvert(helper: ViewHelper<Long>, item: SMS) {
             with(helper) {
-                setText(R.id.tv_id, item.id)
-                setText(R.id.tv_body, item.body)
-                setText(R.id.tv_date, Date(item.date).toString())
-                setText(R.id.tv_type, item.type)
-                setText(R.id.tv_number, item.number)
+                hSetText(R.id.tv_body, item.body)
+                hSetText(R.id.tv_date, Date(item.date).toString())
+                hSetText(R.id.tv_type, item.type)
+                hSetText(R.id.tv_number, item.number)
+                val ctvID: CheckedTextView = hGetView(R.id.tv_id)
+                ctvID.text = item.id
+                val details = helper.getItemDetails()
+                if (details != null) {
+                    ctvID.isChecked = selectionTracker.isSelected(details.selectionKey)
+                } else {
+                    ctvID.isChecked = false
+                }
+            }
+        }
+
+        override fun getItemDetailsProvider(): ItemDetailsProvider<Long>? {
+            return object : ItemDetailsProvider<Long> {
+                override fun create(): ItemDetails<Long> {
+                    return object : ItemDetails<Long>() {
+                        override fun getSelectionKey(): Long? {
+                            return position.toLong()
+                        }
+                    }
+                }
             }
         }
 
@@ -52,7 +106,7 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS> {
                         projection,
                         null,
                         null,
-                        "${Telephony.Sms.DATE} desc limit ${limit} offset ${offset}"
+                        "${Telephony.Sms.DATE} desc limit $limit offset $offset"
                 ) ?: return
                 var sms: SMS
                 val smsList = arrayListOf<SMS>()
@@ -109,6 +163,11 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS> {
             runWithPermissions(loadSMSWithPermission)
         }
         initListable(rv_sms)
+        selectionTracker.addObserver(object: SelectionTracker.SelectionObserver<Long>(){
+            override fun onSelectionChanged() {
+                println("selection size::: ${selectionTracker.selection.size()}")
+            }
+        })
         with(listableManager) {
             setEmptyView(R.layout.layout_list_empty)
             addHeaderView(R.layout.layout_header)
@@ -118,13 +177,13 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS> {
             setAnimationEnable(true)
             setItemClickListener(object : SomethingListable.OnItemClickListener {
                 override fun onItemClick(view: View, position: Int) {
-                    println("[click view]: ${view} >> position: ${position}")
+                    println("[click view]: $view >> position: $position")
                 }
             })
             addChildClickViewIds(R.id.tv_id, R.id.tv_number)
             setItemChildClickListener(object : SomethingListable.OnItemChildClickListener {
                 override fun onItemChildClick(view: View, position: Int) {
-                    println("[click child view]: ${view} >>> position: ${position}")
+                    println("[click child view]: $view >>> position: $position")
                 }
             })
         }

@@ -15,4 +15,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Test Sms" />
+
+    <Button
+        android:id="@+id/btn_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test Card" />
+
+    <Button
+        android:id="@+id/btn_card_raw"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test Card Raw" />
 </LinearLayout>
