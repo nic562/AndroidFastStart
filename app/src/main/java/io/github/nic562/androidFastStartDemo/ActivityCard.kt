@@ -55,7 +55,6 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                             override fun getSelectionKey(): Long? {
                                 return position.toLong()
                             }
-
 //                            override fun inDragRegion(e: MotionEvent): Boolean {
 //                                return true
 //                            }

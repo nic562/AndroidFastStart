@@ -17,7 +17,7 @@ allprojects {
 ### module build.gradle
 ```gradle
 dependencies {
-    implementation 'com.github.nic562:AndroidFastStart:0.6'
+    implementation 'com.github.nic562:AndroidFastStart:0.7'
 }
 ```
 
@@ -65,12 +65,44 @@ class SomeActivity extends ActivityBaseWithImageCrop {
 ```kotlin
 class SomeActivity : SomethingListable<SomeItem> {
     override val listableManager = object : SomethingListable.ListableManager<SomeItem>() {
-        ...
+        // override ...
     }
     override fun onCreate(savedInstanceState: Bundle?) {
-        ...
+        // do something
         
         initListable(recyclerView)
     }
+    
+    // some where to call ...
+    fun f() {
+        listableManager.reloadData()
+    }
+    
+} 
+```
+
+- 整合了 SelectionTracker 用于数据序列的项目批量操作等
+```kotlin
+class SomeActivity : SomethingListable<SomeItem> {
+    override val listableManager = object : SomethingListable.ListableManager<SomeItem>() {
+        // override ...
+    }
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // do something
+        
+        // 可使用 listableManager 中的 setSelectionTracker() 来指定 SelectionTracker 的实现
+       
+        // 也可通过一个内部的简单实现来指定 
+        initListable(recyclerView, withDefaultSelectionTracker = false)
+        
+        // 获取 SelectionTracker
+        listableManager.getSelectionTracker()
+    }
+    
+    // some where to call ...
+    fun f() {
+        listableManager.reloadData()
+    }
+    
 } 
 ```

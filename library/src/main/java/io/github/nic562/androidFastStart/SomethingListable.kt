@@ -366,9 +366,9 @@ interface SomethingListable<T, K> : SomethingWithContext {
         listableManager.setViewContainer(recyclerView)
         if (withDefaultSelectionTracker) {
             val selectionKeyProvider = listableManager.getSelectionKeyProvider()
-                    ?: throw NotImplementedError("Using SelectionTracker please calling setSelectionKeyProvider(..) at first!")
+                    ?: throw NotImplementedError("Using Default SelectionTracker please calling setSelectionKeyProvider(..) at first!")
             val storageStrategy = listableManager.getStorageStrategy()
-                    ?: throw NotImplementedError("Using SelectionTracker please calling setSelectionStorageStrategy(..) at first!")
+                    ?: throw NotImplementedError("Using Default SelectionTracker please calling setSelectionStorageStrategy(..) at first!")
             val selectionTracker = SelectionTracker.Builder<K>(
                     "my_selection",
                     recyclerView,
