@@ -4,7 +4,6 @@ import android.content.Context
 import android.database.Cursor
 import android.os.Bundle
 import android.provider.Telephony
-import android.view.MotionEvent
 import android.view.View
 import android.widget.CheckedTextView
 import androidx.recyclerview.selection.*
@@ -23,35 +22,6 @@ import java.util.Date
  */
 class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
 
-    private val selectionTracker by lazy {
-        SelectionTracker.Builder<Long>(
-                "my_selection",
-                rv_sms,
-                object : ItemKeyProvider<Long>(SCOPE_MAPPED) {
-                    override fun getKey(position: Int): Long {
-                        return position.toLong()
-                    }
-
-                    override fun getPosition(key: Long): Int {
-                        return key.toInt()
-                    }
-                },
-                object : ItemDetailsLookup<Long>() {
-                    @Suppress("UNCHECKED_CAST")
-                    override fun getItemDetails(e: MotionEvent): ItemDetails<Long>? {
-                        println("??????? get item details!!! ${e.action}")
-                        val v = rv_sms.findChildViewUnder(e.x, e.y)
-                        if (v != null) {
-                            val viewHolder = rv_sms.getChildViewHolder(v)
-                            return (viewHolder as ViewHelper<Long>).getItemDetails()
-                        }
-                        return null
-                    }
-                },
-                StorageStrategy.createLongStorage()
-        ).withSelectionPredicate(SelectionPredicates.createSelectAnything<Long>()).build()
-    }
-
     override val listableManager = object : SomethingListable.ListableManager<SMS, Long>() {
         override val listItemLayoutID = R.layout.layout_item_sms
 
@@ -64,7 +34,8 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
                 val ctvID: CheckedTextView = hGetView(R.id.tv_id)
                 ctvID.text = item.id
                 val details = helper.getItemDetails()
-                if (details != null) {
+                val selectionTracker = getSelectionTracker()
+                if (details != null && selectionTracker != null) {
                     ctvID.isChecked = selectionTracker.isSelected(details.selectionKey)
                 } else {
                     ctvID.isChecked = false
@@ -162,19 +133,27 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
         btn_read.setOnClickListener {
             runWithPermissions(loadSMSWithPermission)
         }
-        initListable(rv_sms)
-        selectionTracker.addObserver(object: SelectionTracker.SelectionObserver<Long>(){
-            override fun onSelectionChanged() {
-                println("selection size::: ${selectionTracker.selection.size()}")
-            }
-        })
         with(listableManager) {
-            setEmptyView(R.layout.layout_list_empty)
-            addHeaderView(R.layout.layout_header)
-            addFooterView(R.layout.layout_footer)
             setFooterWithEmptyEnable(true)
             setHeaderWithEmptyEnable(true)
             setAnimationEnable(true)
+
+            setSelectionStorageStrategy(StorageStrategy.createLongStorage())
+            setSelectionKeyProvider(object : ItemKeyProvider<Long>(SCOPE_MAPPED) {
+                override fun getKey(position: Int): Long {
+                    return position.toLong()
+                }
+
+                override fun getPosition(key: Long): Int {
+                    return key.toInt()
+                }
+            })
+
+            initListable(rv_sms, withDefaultSelectionTracker = true)
+
+            setEmptyView(R.layout.layout_list_empty)
+            addHeaderView(R.layout.layout_header)
+            addFooterView(R.layout.layout_footer)
             setItemClickListener(object : SomethingListable.OnItemClickListener {
                 override fun onItemClick(view: View, position: Int) {
                     println("[click view]: $view >> position: $position")
@@ -184,6 +163,12 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
             setItemChildClickListener(object : SomethingListable.OnItemChildClickListener {
                 override fun onItemChildClick(view: View, position: Int) {
                     println("[click child view]: $view >>> position: $position")
+                }
+            })
+
+            getSelectionTracker()?.addObserver(object: SelectionTracker.SelectionObserver<Long>(){
+                override fun onSelectionChanged() {
+                    println("selection size::: ${listableManager.getSelectionTracker()?.selection?.size()}")
                 }
             })
         }

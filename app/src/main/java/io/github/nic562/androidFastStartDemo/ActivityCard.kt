@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.view.MotionEvent
 import androidx.appcompat.view.ActionMode
 import androidx.recyclerview.selection.*
 import com.google.android.material.card.MaterialCardView
@@ -20,18 +19,7 @@ import kotlinx.android.synthetic.main.activity_card.*
  */
 class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode.Callback {
 
-    private var selectionTracker: SelectionTracker<Long>? = null
-
     private var actionMode: ActionMode? = null
-    private val selectionKeyProvider = object : ItemKeyProvider<Long>(SCOPE_MAPPED) {
-        override fun getKey(position: Int): Long {
-            return position.toLong()
-        }
-
-        override fun getPosition(key: Long): Int {
-            return key.toInt()
-        }
-    }
 
     override val listableManager: SomethingListable.ListableManager<String, Long> by lazy {
         object : SomethingListable.ListableManager<String, Long>() {
@@ -43,8 +31,9 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                     hSetText(R.id.tv_subtitle, item)
                     val c = hGetView<MaterialCardView>(R.id.card)
                     val details = helper.getItemDetails()
+                    val selectionTracker = getSelectionTracker()
                     if (details != null && selectionTracker != null) {
-                        c.isChecked = selectionTracker!!.isSelected(details.selectionKey)
+                        c.isChecked = selectionTracker.isSelected(details.selectionKey)
                     } else {
                         c.isChecked = false
                     }
@@ -67,9 +56,9 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                                 return position.toLong()
                             }
 
-                            override fun inDragRegion(e: MotionEvent): Boolean {
-                                return true
-                            }
+//                            override fun inDragRegion(e: MotionEvent): Boolean {
+//                                return true
+//                            }
                         }
                     }
                 }
@@ -81,41 +70,37 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_card)
 
-        initListable(rv_cards)
-        selectionTracker = SelectionTracker.Builder<Long>(
-                "my_selection",
-                rv_cards,
-                selectionKeyProvider,
-                object : ItemDetailsLookup<Long>() {
-                    @Suppress("UNCHECKED_CAST")
-                    override fun getItemDetails(e: MotionEvent): ItemDetails<Long>? {
-                        val v = rv_cards.findChildViewUnder(e.x, e.y)
-                        if (v != null) {
-                            val viewHolder = rv_cards.getChildViewHolder(v)
-                            return (viewHolder as ViewHelper<Long>).getItemDetails()
-                        }
-                        return null
-                    }
-                },
-                StorageStrategy.createLongStorage()
-        ).withSelectionPredicate(SelectionPredicates.createSelectAnything<Long>()).build()
-
-        selectionTracker?.addObserver(object : SelectionTracker.SelectionObserver<Long>() {
-            override fun onSelectionChanged() {
-                if (selectionTracker?.selection?.size() ?: 0 > 0) {
-                    if (actionMode == null) {
-                        actionMode = startSupportActionMode(this@ActivityCard)
-                    }
-                    actionMode?.title = selectionTracker?.selection?.size().toString()
-                } else {
-                    if (actionMode != null) {
-                        actionMode?.finish()
-                    }
-                }
-            }
-        })
         with(listableManager) {
             setAnimationEnable(true)
+            setSelectionStorageStrategy(StorageStrategy.createLongStorage())
+            setSelectionKeyProvider(object : ItemKeyProvider<Long>(SCOPE_MAPPED) {
+                override fun getKey(position: Int): Long {
+                    return position.toLong()
+                }
+
+                override fun getPosition(key: Long): Int {
+                    return key.toInt()
+                }
+            })
+
+            initListable(rv_cards, withDefaultSelectionTracker = true)
+
+            with(getSelectionTracker()!!) {
+                addObserver(object : SelectionTracker.SelectionObserver<Long>() {
+                    override fun onSelectionChanged() {
+                        if (selection.size() > 0) {
+                            if (actionMode == null) {
+                                actionMode = startSupportActionMode(this@ActivityCard)
+                            }
+                            actionMode?.title = selection.size().toString()
+                        } else {
+                            if (actionMode != null) {
+                                actionMode?.finish()
+                            }
+                        }
+                    }
+                })
+            }
         }
     }
 
@@ -130,15 +115,17 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         if (item?.itemId == R.id.action_del) {
-            val delItems = arrayListOf<String>()
-            for (x in selectionTracker?.selection ?: return true) {
-                val p = selectionKeyProvider.getPosition(x)
-                delItems.add(listableManager.dataList[p])
+            with(listableManager.getSelectionTracker()!!) {
+                val delItems = arrayListOf<String>()
+                for (x in selection) {
+                    val p = listableManager.getSelectionKeyProvider()!!.getPosition(x)
+                    delItems.add(listableManager.dataList[p])
+                }
+                listableManager.dataList.removeAll(delItems)
+                clearSelection()
+                listableManager.notifyDataSetChanged()
+                return true
             }
-            listableManager.dataList.removeAll(delItems)
-            selectionTracker?.clearSelection()
-            listableManager.notifyDataSetChanged()
-            return true
         }
         return false
     }
@@ -154,7 +141,7 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
     }
 
     override fun onDestroyActionMode(mode: ActionMode?) {
-        selectionTracker?.clearSelection()
+        listableManager.getSelectionTracker()?.clearSelection()
         this.actionMode = null
     }
 }

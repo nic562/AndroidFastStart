@@ -1,9 +1,11 @@
 package io.github.nic562.androidFastStart
 
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.widget.LinearLayout
 import androidx.annotation.*
+import androidx.recyclerview.selection.*
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter.base.BaseQuickAdapter
@@ -71,6 +73,10 @@ interface SomethingListable<T, K> : SomethingWithContext {
         abstract val listItemLayoutID: Int
 
         private var recyclerView: RecyclerView? = null
+
+        private var selectionTracker: SelectionTracker<K>? = null
+        private var selectionKeyProvider: ItemKeyProvider<K>? = null
+        private var storageStrategy: StorageStrategy<K>? = null
 
         private abstract class Adapter<T, K>(layoutID: Int, dataList: MutableList<T>) :
                 BaseQuickAdapter<T, ViewHolder<K>>(layoutID, dataList), LoadMoreModule, AnkoLogger {
@@ -152,7 +158,34 @@ interface SomethingListable<T, K> : SomethingWithContext {
             }
         }
 
+        fun setSelectionTracker(selectionTracker: SelectionTracker<K>) {
+            this.selectionTracker = selectionTracker
+        }
+
+        fun getSelectionTracker(): SelectionTracker<K>? {
+            return selectionTracker
+        }
+
+        fun getSelectionKeyProvider(): ItemKeyProvider<K>? {
+            return selectionKeyProvider
+        }
+
+        fun setSelectionKeyProvider(selectionKeyProvider: ItemKeyProvider<K>) {
+            this.selectionKeyProvider = selectionKeyProvider
+        }
+
+        fun setSelectionStorageStrategy(storageStrategy: StorageStrategy<K>) {
+            this.storageStrategy = storageStrategy
+        }
+
+        fun getStorageStrategy(): StorageStrategy<K>? {
+            return storageStrategy
+        }
+
         open fun getItemDetailsProvider(): ItemDetailsProvider<K>? {
+            if (selectionTracker != null) {
+                throw NotImplementedError("SelectionTracker need a ItemDetailsProvide. Please override this function")
+            }
             return null
         }
 
@@ -326,8 +359,34 @@ interface SomethingListable<T, K> : SomethingWithContext {
         }
     }
 
-    fun initListable(recyclerView: RecyclerView, layoutManager: RecyclerView.LayoutManager = getDefaultListableLayoutManager()) {
+    fun initListable(recyclerView: RecyclerView,
+                     layoutManager: RecyclerView.LayoutManager = getDefaultListableLayoutManager(),
+                     withDefaultSelectionTracker: Boolean = false) {
         recyclerView.layoutManager = layoutManager
         listableManager.setViewContainer(recyclerView)
+        if (withDefaultSelectionTracker) {
+            val selectionKeyProvider = listableManager.getSelectionKeyProvider()
+                    ?: throw NotImplementedError("Using SelectionTracker please calling setSelectionKeyProvider(..) at first!")
+            val storageStrategy = listableManager.getStorageStrategy()
+                    ?: throw NotImplementedError("Using SelectionTracker please calling setSelectionStorageStrategy(..) at first!")
+            val selectionTracker = SelectionTracker.Builder<K>(
+                    "my_selection",
+                    recyclerView,
+                    selectionKeyProvider,
+                    object : ItemDetailsLookup<K>() {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun getItemDetails(e: MotionEvent): ItemDetails<K>? {
+                            val v = recyclerView.findChildViewUnder(e.x, e.y)
+                            if (v != null) {
+                                val viewHolder = recyclerView.getChildViewHolder(v)
+                                return (viewHolder as ViewHelper<K>).getItemDetails()
+                            }
+                            return null
+                        }
+                    },
+                    storageStrategy
+            ).withSelectionPredicate(SelectionPredicates.createSelectAnything<K>()).build()
+            listableManager.setSelectionTracker(selectionTracker)
+        }
     }
 }
