@@ -71,6 +71,8 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
 
         with(listableManager) {
             setAnimationEnable(true)
+            setHeaderWithEmptyEnable(true)
+            setFooterWithEmptyEnable(true)
             setSelectionStorageStrategy(StorageStrategy.createLongStorage())
             setSelectionKeyProvider(object : ItemKeyProvider<Long>(SCOPE_MAPPED) {
                 override fun getKey(position: Int): Long {

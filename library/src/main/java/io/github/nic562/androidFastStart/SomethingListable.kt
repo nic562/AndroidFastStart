@@ -96,22 +96,14 @@ interface SomethingListable<T, K> : SomethingWithContext {
                 }
                 /**
                  * 以下调整，使得 数据列中，额外的头部数据控件，空数据占位控件，底部数据控件，加载更多的占位控件 的点击事件并不会触发 selectionTracker
+                 *
+                 * 除了 -1， 其他负数还是会触发 selectionTracker 所以全部归集到-1，目前尚不可区分对待
+                 *
+                 * 目前该 ItemDetails 只在 SelectionTracker 中用到，所以并不会对其他组件造成影响。
                  */
                 when (holder.itemViewType) {
-                    HEADER_VIEW -> {
+                    EMPTY_VIEW, HEADER_VIEW, FOOTER_VIEW, LOAD_MORE_VIEW -> {
                         holder.getItemDetails()?.position = -1
-                        return
-                    }
-                    EMPTY_VIEW -> {
-                        holder.getItemDetails()?.position = -2
-                        return
-                    }
-                    LOAD_MORE_VIEW -> {
-                        holder.getItemDetails()?.position = -3
-                        return
-                    }
-                    FOOTER_VIEW -> {
-                        holder.getItemDetails()?.position = -4
                         return
                     }
                     else -> {
