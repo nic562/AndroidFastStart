@@ -94,7 +94,31 @@ interface SomethingListable<T, K> : SomethingWithContext {
                 if (holder.itemDetailsProvider == null) {
                     holder.itemDetailsProvider = getItemDetailsProvider()
                 }
-                holder.getItemDetails()?.position = position
+                /**
+                 * 以下调整，使得 数据列中，额外的头部数据控件，空数据占位控件，底部数据控件，加载更多的占位控件 的点击事件并不会触发 selectionTracker
+                 */
+                when (holder.itemViewType) {
+                    HEADER_VIEW -> {
+                        holder.getItemDetails()?.position = -1
+                        return
+                    }
+                    EMPTY_VIEW -> {
+                        holder.getItemDetails()?.position = -2
+                        return
+                    }
+                    LOAD_MORE_VIEW -> {
+                        holder.getItemDetails()?.position = -3
+                        return
+                    }
+                    FOOTER_VIEW -> {
+                        holder.getItemDetails()?.position = -4
+                        return
+                    }
+                    else -> {
+                        holder.getItemDetails()?.position = position
+                    }
+                }
+
             }
 
             abstract fun getItemDetailsProvider(): ItemDetailsProvider<K>?

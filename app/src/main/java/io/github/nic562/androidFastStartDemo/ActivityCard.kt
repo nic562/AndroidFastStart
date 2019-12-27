@@ -83,10 +83,14 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
             })
 
             initListable(rv_cards, withDefaultSelectionTracker = true)
-
+            setEmptyView(R.layout.layout_list_empty)
+            addHeaderView(R.layout.layout_header)
+            addHeaderView(R.layout.layout_header)
+            addFooterView(R.layout.layout_footer)
             with(getSelectionTracker()!!) {
                 addObserver(object : SelectionTracker.SelectionObserver<Long>() {
                     override fun onSelectionChanged() {
+                        println(">>> $selection")
                         if (selection.size() > 0) {
                             if (actionMode == null) {
                                 actionMode = startSupportActionMode(this@ActivityCard)
@@ -116,8 +120,10 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
         if (item?.itemId == R.id.action_del) {
             with(listableManager.getSelectionTracker()!!) {
                 val delItems = arrayListOf<String>()
+                // 必须要注意这里，头部元素会占用列表一个席位，所以必须手动调整 selectionTracker 中记录的 position
+                val fix = if(listableManager.hasHeaderLayout()) -1 else 0
                 for (x in selection) {
-                    val p = listableManager.getSelectionKeyProvider()!!.getPosition(x)
+                    val p = listableManager.getSelectionKeyProvider()!!.getPosition(x) + fix
                     delItems.add(listableManager.dataList[p])
                 }
                 listableManager.dataList.removeAll(delItems)
