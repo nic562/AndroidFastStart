@@ -1,21 +1,15 @@
 package io.github.nic562.androidFastStart
 
-import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
-import android.widget.LinearLayout
-import androidx.annotation.*
-import androidx.recyclerview.selection.*
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.chad.library.adapter.base.module.LoadMoreModule
+import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.ViewHolder
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
 import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.warn
-import java.util.LinkedHashSet
+import java.lang.RuntimeException
 
 /**
  * 实现基于RecyclerView的序列数据展示功能接口
@@ -24,62 +18,46 @@ import java.util.LinkedHashSet
  *
  * Created by Nic on 2019/12/20.
  */
-interface SomethingListable<T, K> : SomethingWithContext {
-
-    val listableManager: ListableManager<T, K>
-
-    /**
-     * 获取多数情况下通用的垂直布局LayoutManager
-     *
-     */
-    private
-    fun getDefaultListableLayoutManager(): RecyclerView.LayoutManager {
-        val lm = LinearLayoutManager(getOwnerContext())
-        lm.orientation = LinearLayoutManager.VERTICAL
-        return lm
-    }
-
-    interface OnItemClickListener {
-        fun onItemClick(view: View, position: Int)
-    }
-
-    interface OnItemLongClickListener {
-        fun onItemLongClick(view: View, position: Int): Boolean
-    }
-
-    interface OnItemChildClickListener {
-        fun onItemChildClick(view: View, position: Int)
-    }
-
-    interface OnItemChildLongClickListener {
-        fun onItemChildLongClick(view: View, position: Int): Boolean
-    }
+interface SomethingListable<T, K> : SomethingListableBase<K> {
 
     interface OnLoadDataCallback<T> {
         fun onLoadData(data: Collection<T>, totalCount: Int)
         fun onError()
     }
 
-    abstract class ListableManager<T, K> {
-        var totalCount = 0
-            private set
+    fun loadListableData(page: Int, limit: Int,
+                         dataCallback: OnLoadDataCallback<T>)
 
-        var currPage = 1
-        var limit = 10
-        var canLoadMore = true
-        var autoLoadMore = true
-        val dataList = mutableListOf<T>()
+    fun listableItemConvert(helper: ViewHelper<K>, item: T)
 
-        abstract val listItemLayoutID: Int
+    override fun instanceListableManager(vararg args: Any): ListableManager<K> {
+        if (!(args.isNotEmpty() && args[0] is Int)) {
+            throw RuntimeException("The first arg means the [List Item Layout ID], it must be an Int.")
+        }
+        if (!(args.size > 1 && args[1] is MutableList<*>)) {
+            throw RuntimeException("The second arg means the [Data List<T>], it must be an MutableList<T>")
+        }
+        return object : NormalListableManager<T, K>(args[0] as Int, args[1] as MutableList<T>) {
 
-        private var recyclerView: RecyclerView? = null
+            override fun itemConvert(helper: ViewHelper<K>, item: T) {
+                listableItemConvert(helper, item)
+            }
 
-        private var selectionTracker: SelectionTracker<K>? = null
-        private var selectionKeyProvider: ItemKeyProvider<K>? = null
-        private var storageStrategy: StorageStrategy<K>? = null
+            override fun loadData(page: Int, limit: Int, dataCallback: OnLoadDataCallback<T>) {
+                loadListableData(page, limit, dataCallback)
+            }
 
-        private abstract class Adapter<T, K>(layoutID: Int, dataList: MutableList<T>) :
-                BaseQuickAdapter<T, ViewHolder<K>>(layoutID, dataList), LoadMoreModule, AnkoLogger {
+            override fun getItemDetailsProvider(): ItemDetailsProvider<K>? {
+                return getListableItemDetailsProvider() ?: super.getItemDetailsProvider()
+            }
+        }
+    }
+
+    private abstract class NormalListableManager<T, K>(listItemLayoutID: Int, dataList: MutableList<T>) : ListableManagerBase<T, K, ViewHolder<K>>() {
+
+        private abstract class Adapter<T, K>(layoutID: Int, list: MutableList<T>) :
+                BaseQuickAdapter<T, ViewHolder<K>>(layoutID, list), LoadMoreModule, AnkoLogger {
+
             override fun onBindViewHolder(holder: ViewHolder<K>, position: Int) {
                 bindItemDetails(holder, position)
                 super.onBindViewHolder(holder, position)
@@ -90,30 +68,14 @@ interface SomethingListable<T, K> : SomethingWithContext {
                 super.onBindViewHolder(holder, position, payloads)
             }
 
-            private fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
-                if (holder.itemDetailsProvider == null) {
-                    holder.itemDetailsProvider = getItemDetailsProvider()
-                }
-                /**
-                 * 以下调整，使得 数据列中，额外的头部数据控件，空数据占位控件，底部数据控件，加载更多的占位控件 的点击事件并不会触发 selectionTracker
-                 *
-                 * 除了 -1， 其他负数还是会触发 selectionTracker 所以全部归集到-1，目前尚不可区分对待
-                 *
-                 * 目前该 ItemDetails 只在 SelectionTracker 中用到，所以并不会对其他组件造成影响。
-                 */
-                when (holder.itemViewType) {
-                    EMPTY_VIEW, HEADER_VIEW, FOOTER_VIEW, LOAD_MORE_VIEW -> {
-                        holder.getItemDetails()?.position = -1
-                        return
-                    }
-                    else -> {
-                        holder.getItemDetails()?.position = position
-                    }
-                }
-
-            }
-
-            abstract fun getItemDetailsProvider(): ItemDetailsProvider<K>?
+            /**
+             * 以下调整，使得 数据列中，额外的头部数据控件，空数据占位控件，底部数据控件，加载更多的占位控件 的点击事件并不会触发 selectionTracker
+             *
+             * 除了 -1， 其他负数还是会触发 selectionTracker 所以全部归集到-1，目前尚不可区分对待
+             *
+             * 目前该 ItemDetails 只在 SelectionTracker 中用到，所以并不会对其他组件造成影响。
+             */
+            abstract fun bindItemDetails(holder: ViewHolder<K>, position: Int)
 
             /**
              * 必须重写该方法
@@ -133,35 +95,34 @@ interface SomethingListable<T, K> : SomethingWithContext {
             }
         }
 
-        private val adapter: Adapter<T, K> by lazy {
-            val a = object : Adapter<T, K>(listItemLayoutID, dataList) {
+        override val adapter: BaseQuickAdapter<T, ViewHolder<K>> by lazy {
+            object : Adapter<T, K>(listItemLayoutID, dataList) {
                 override fun convert(helper: ViewHolder<K>, item: T?) {
                     if (item != null) {
                         itemConvert(helper, item)
                     }
                 }
 
-                override fun getItemDetailsProvider(): ItemDetailsProvider<K>? {
-                    return this@ListableManager.getItemDetailsProvider()
+                override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
+                    if (holder.itemDetailsProvider == null) {
+                        holder.itemDetailsProvider = this@NormalListableManager.getItemDetailsProvider()
+                    }
+                    when (holder.itemViewType) {
+                        EMPTY_VIEW, HEADER_VIEW, FOOTER_VIEW, LOAD_MORE_VIEW -> {
+                            holder.getItemDetails()?.position = -1
+                            return
+                        }
+                        else -> {
+                            holder.getItemDetails()?.position = position
+                        }
+                    }
                 }
-            }
-
-            a.loadMoreModule!!.isEnableLoadMore = canLoadMore
-            a.loadMoreModule!!.isAutoLoadMore = autoLoadMore
-            a.loadMoreModule!!.isEnableLoadMoreIfNotFullPage = false
-            a.loadMoreModule!!.setOnLoadMoreListener {
-                if (currPage * limit >= totalCount) {
-                    a.loadMoreModule!!.loadMoreEnd(true)
-                } else {
-                    myLoadData(++currPage, limit)
-                }
-            }
-            a
+            }.apply { setLoadMoreModule(loadMoreModule) }
         }
 
         private val onLoadDataCallback = object : OnLoadDataCallback<T> {
             override fun onLoadData(data: Collection<T>, totalCount: Int) {
-                this@ListableManager.totalCount = totalCount
+                this@NormalListableManager.totalCount = totalCount
                 if (data.isNotEmpty()) {
                     adapter.data.addAll(data)
                     adapter.notifyDataSetChanged()
@@ -174,235 +135,23 @@ interface SomethingListable<T, K> : SomethingWithContext {
             }
         }
 
-        fun setSelectionTracker(selectionTracker: SelectionTracker<K>) {
-            this.selectionTracker = selectionTracker
-        }
-
-        fun getSelectionTracker(): SelectionTracker<K>? {
-            return selectionTracker
-        }
-
-        fun getSelectionKeyProvider(): ItemKeyProvider<K>? {
-            return selectionKeyProvider
-        }
-
-        fun setSelectionKeyProvider(selectionKeyProvider: ItemKeyProvider<K>) {
-            this.selectionKeyProvider = selectionKeyProvider
-        }
-
-        fun setSelectionStorageStrategy(storageStrategy: StorageStrategy<K>) {
-            this.storageStrategy = storageStrategy
-        }
-
-        fun getStorageStrategy(): StorageStrategy<K>? {
-            return storageStrategy
-        }
-
-        open fun getItemDetailsProvider(): ItemDetailsProvider<K>? {
-            if (selectionTracker != null) {
-                throw NotImplementedError("SelectionTracker need a ItemDetailsProvide. Please override this function")
-            }
-            return null
-        }
-
         abstract fun itemConvert(helper: ViewHelper<K>, item: T)
 
         abstract fun loadData(page: Int, limit: Int,
                               dataCallback: OnLoadDataCallback<T>)
 
-        private fun myLoadData(page: Int, limit: Int) {
+        override fun myLoadData(page: Int, limit: Int) {
             loadData(page, limit, onLoadDataCallback)
         }
 
-        private fun createView(@LayoutRes resID: Int): View {
-            if (recyclerView != null) {
-                return LayoutInflater.from(recyclerView!!.context).inflate(resID, recyclerView, false)
-            } else {
-                throw RuntimeException("View container had not been provide! Please call `setViewContainer()` first.")
-            }
+        override fun getItemDetails(view: View): ItemDetails<K>? {
+            val viewHolder = recyclerView?.getChildViewHolder(view) ?: return null
+            return (viewHolder as ViewHelper<K>).getItemDetails()
         }
 
-        fun setViewContainer(recyclerView: RecyclerView) {
-            recyclerView.adapter = adapter
-            this.recyclerView = recyclerView
-        }
-
-        fun clearData() {
-            adapter.data.clear()
-            adapter.notifyDataSetChanged()
-            currPage = 1
-        }
-
-        fun reloadData() {
-            clearData()
-            myLoadData(currPage, limit)
-        }
-
-        fun notifyDataSetChanged() {
-            adapter.notifyDataSetChanged()
-        }
-
-        fun removeData(position: Int) {
-            adapter.remove(position)
-            adapter.notifyDataSetChanged()
-        }
-
-        fun addData(data: T) {
-            adapter.addData(data)
-            adapter.notifyDataSetChanged()
-        }
-
-        fun setEmptyView(@LayoutRes resID: Int) {
-            adapter.setEmptyView(resID)
-        }
-
-        fun setEmptyView(v: View) {
-            adapter.setEmptyView(v)
-        }
-
-        fun addHeaderView(@LayoutRes resID: Int, index: Int = -1, orientation: Int = LinearLayout.VERTICAL): View {
-            val v = createView(resID)
-            adapter.addHeaderView(v, index, orientation)
-            return v
-        }
-
-        fun addHeaderView(view: View, index: Int = -1, orientation: Int = LinearLayout.VERTICAL) {
-            adapter.addHeaderView(view, index, orientation)
-        }
-
-        fun setHeaderView(@LayoutRes resID: Int, index: Int = 0, orientation: Int = LinearLayout.VERTICAL): View {
-            val v = createView(resID)
-            adapter.setHeaderView(v, index, orientation)
-            return v
-        }
-
-        fun setHeaderView(view: View, index: Int = 0, orientation: Int = LinearLayout.VERTICAL) {
-            adapter.setHeaderView(view, index, orientation)
-        }
-
-        fun hasHeaderLayout(): Boolean {
-            return adapter.hasHeaderLayout()
-        }
-
-        fun removeHeaderView(header: View) {
-            adapter.removeHeaderView(header)
-        }
-
-        fun removeAllHeaderView() {
-            adapter.removeAllHeaderView()
-        }
-
-        fun addFooterView(@LayoutRes resID: Int, index: Int = -1, orientation: Int = LinearLayout.VERTICAL): View {
-            val v = createView(resID)
-            adapter.addFooterView(v, index, orientation)
-            return v
-        }
-
-        fun addFooterView(view: View, index: Int = -1, orientation: Int = LinearLayout.VERTICAL) {
-            adapter.addFooterView(view, index, orientation)
-        }
-
-        fun setFooterView(@LayoutRes resID: Int, index: Int = 0, orientation: Int = LinearLayout.VERTICAL): View {
-            val v = createView(resID)
-            adapter.setFooterView(v, index, orientation)
-            return v
-        }
-
-        fun setFooterView(view: View, index: Int = 0, orientation: Int = LinearLayout.VERTICAL) {
-            adapter.setFooterView(view, index, orientation)
-        }
-
-        fun hasFooterLayout(): Boolean {
-            return adapter.hasFooterLayout()
-        }
-
-        fun removeFooterView(footer: View) {
-            adapter.removeFooterView(footer)
-        }
-
-        fun removeAllFooterView() {
-            adapter.removeAllFooterView()
-        }
-
-        /**
-         * 当显示空布局时，是否显示 头布局
-         */
-        fun setHeaderWithEmptyEnable(boolean: Boolean) {
-            adapter.headerWithEmptyEnable = boolean
-        }
-
-        /**
-         * 当显示空布局时，是否显示 脚布局
-         */
-        fun setFooterWithEmptyEnable(boolean: Boolean) {
-            adapter.footerWithEmptyEnable = boolean
-        }
-
-        fun setItemClickListener(listener: OnItemClickListener) {
-            adapter.setOnItemClickListener { _, view, position ->
-                listener.onItemClick(view, position)
-            }
-        }
-
-        fun setItemLongClickListener(listener: OnItemLongClickListener) {
-            adapter.setOnItemLongClickListener { _, view, position ->
-                return@setOnItemLongClickListener listener.onItemLongClick(view, position)
-            }
-        }
-
-        fun setItemChildClickListener(listener: OnItemChildClickListener) {
-            adapter.setOnItemChildClickListener { _, view, position ->
-                listener.onItemChildClick(view, position)
-            }
-        }
-
-        fun setItemChildLongClickListener(listener: OnItemChildLongClickListener) {
-            adapter.setOnItemChildLongClickListener { _, view, position ->
-                return@setOnItemChildLongClickListener listener.onItemChildLongClick(view, position)
-            }
-        }
-
-        fun addChildClickViewIds(@IdRes vararg viewIds: Int) {
-            adapter.addChildClickViewIds(*viewIds)
-        }
-
-        fun getChildLongClickViewIds(): LinkedHashSet<Int> {
-            return adapter.getChildLongClickViewIds()
-        }
-
-        fun setAnimationEnable(boolean: Boolean) {
-            adapter.animationEnable = boolean
-        }
     }
 
-    fun initListable(recyclerView: RecyclerView,
-                     layoutManager: RecyclerView.LayoutManager = getDefaultListableLayoutManager(),
-                     withDefaultSelectionTracker: Boolean = false) {
-        recyclerView.layoutManager = layoutManager
-        listableManager.setViewContainer(recyclerView)
-        if (withDefaultSelectionTracker) {
-            val selectionKeyProvider = listableManager.getSelectionKeyProvider()
-                    ?: throw NotImplementedError("Using Default SelectionTracker please calling setSelectionKeyProvider(..) at first!")
-            val storageStrategy = listableManager.getStorageStrategy()
-                    ?: throw NotImplementedError("Using Default SelectionTracker please calling setSelectionStorageStrategy(..) at first!")
-            val selectionTracker = SelectionTracker.Builder<K>(
-                    "my_selection",
-                    recyclerView,
-                    selectionKeyProvider,
-                    object : ItemDetailsLookup<K>() {
-                        @Suppress("UNCHECKED_CAST")
-                        override fun getItemDetails(e: MotionEvent): ItemDetails<K>? {
-                            val v = recyclerView.findChildViewUnder(e.x, e.y)
-                            if (v != null) {
-                                val viewHolder = recyclerView.getChildViewHolder(v)
-                                return (viewHolder as ViewHelper<K>).getItemDetails()
-                            }
-                            return null
-                        }
-                    },
-                    storageStrategy
-            ).withSelectionPredicate(SelectionPredicates.createSelectAnything<K>()).build()
-            listableManager.setSelectionTracker(selectionTracker)
-        }
+    override fun getItemDetails(view: View): ItemDetails<K>? {
+        return listableManager.getItemDetails(view)
     }
 }

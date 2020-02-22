@@ -18,22 +18,24 @@ import java.util.LinkedHashSet
 /**
  * Created by Nic on 2020/2/21.
  */
-abstract class ListableManagerBase<T, K> : ListableManager<K> {
+internal
+abstract class ListableManagerBase<T, K, VH: BaseViewHolder> : ListableManager<K> {
     var totalCount = 0
-        private set
+        protected set
 
     var currPage = 1
     var limit = 10
     var canLoadMore = true
     var autoLoadMore = true
 
-    private var recyclerView: RecyclerView? = null
+    var recyclerView: RecyclerView? = null
+        private set
 
     private var selectionTracker: SelectionTracker<K>? = null
     private var selectionKeyProvider: ItemKeyProvider<K>? = null
     private var storageStrategy: StorageStrategy<K>? = null
 
-    protected abstract val adapter: BaseQuickAdapter<T, BaseViewHolder>
+    protected abstract val adapter: BaseQuickAdapter<T, VH>
 
     protected fun setLoadMoreModule(loadMoreModule: BaseLoadMoreModule?) {
         loadMoreModule?.apply {
@@ -56,11 +58,6 @@ abstract class ListableManagerBase<T, K> : ListableManager<K> {
         } else {
             throw RuntimeException("View container had not been provide! Please call `setViewContainer()` first.")
         }
-    }
-
-    fun addData(data: T) {
-        adapter.addData(data)
-        adapter.notifyDataSetChanged()
     }
 
     override fun reloadData() {
@@ -237,25 +234,25 @@ abstract class ListableManagerBase<T, K> : ListableManager<K> {
         adapter.footerWithEmptyEnable = boolean
     }
 
-    override fun setItemClickListener(listener: SomethingListable.OnItemClickListener) {
+    override fun setItemClickListener(listener: OnItemClickListener) {
         adapter.setOnItemClickListener { _, view, position ->
             listener.onItemClick(view, position)
         }
     }
 
-    override fun setItemLongClickListener(listener: SomethingListable.OnItemLongClickListener) {
+    override fun setItemLongClickListener(listener: OnItemLongClickListener) {
         adapter.setOnItemLongClickListener { _, view, position ->
             return@setOnItemLongClickListener listener.onItemLongClick(view, position)
         }
     }
 
-    override fun setItemChildClickListener(listener: SomethingListable.OnItemChildClickListener) {
+    override fun setItemChildClickListener(listener: OnItemChildClickListener) {
         adapter.setOnItemChildClickListener { _, view, position ->
             listener.onItemChildClick(view, position)
         }
     }
 
-    override fun setItemChildLongClickListener(listener: SomethingListable.OnItemChildLongClickListener) {
+    override fun setItemChildLongClickListener(listener: OnItemChildLongClickListener) {
         adapter.setOnItemChildLongClickListener { _, view, position ->
             return@setOnItemChildLongClickListener listener.onItemChildLongClick(view, position)
         }

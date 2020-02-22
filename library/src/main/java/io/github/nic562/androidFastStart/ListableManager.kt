@@ -8,6 +8,7 @@ import androidx.recyclerview.selection.ItemKeyProvider
 import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.RecyclerView
+import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
 import java.util.LinkedHashSet
 
@@ -28,6 +29,8 @@ interface ListableManager<K> {
     fun getStorageStrategy(): StorageStrategy<K>?
 
     fun getItemDetailsProvider(): ItemDetailsProvider<K>?
+
+    fun getItemDetails(view: View): ItemDetails<K>?
 
     fun setViewContainer(recyclerView: RecyclerView)
 
@@ -83,13 +86,13 @@ interface ListableManager<K> {
      */
     fun setFooterWithEmptyEnable(boolean: Boolean)
 
-    fun setItemClickListener(listener: SomethingListable.OnItemClickListener)
+    fun setItemClickListener(listener: OnItemClickListener)
 
-    fun setItemLongClickListener(listener: SomethingListable.OnItemLongClickListener)
+    fun setItemLongClickListener(listener: OnItemLongClickListener)
 
-    fun setItemChildClickListener(listener: SomethingListable.OnItemChildClickListener)
+    fun setItemChildClickListener(listener: OnItemChildClickListener)
 
-    fun setItemChildLongClickListener(listener: SomethingListable.OnItemChildLongClickListener)
+    fun setItemChildLongClickListener(listener: OnItemChildLongClickListener)
 
     fun addChildClickViewIds(@IdRes vararg viewIds: Int)
 

@@ -8,6 +8,7 @@ import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.nic562.androidFastStart.viewholder.ItemDetails
+import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
 
 /**
  * 实现基于RecyclerView的序列数据展示功能接口
@@ -18,6 +19,15 @@ import io.github.nic562.androidFastStart.viewholder.ItemDetails
 interface SomethingListableBase<K> : SomethingWithContext {
 
     val listableManager: ListableManager<K>
+
+    fun instanceListableManager(vararg args: Any): ListableManager<K>
+
+    /**
+     *  若使用到 SelectionTracker， 必须根据 K 值 重写该方法的实现，返回有效的 ItemDetailsProvider
+     */
+    fun getListableItemDetailsProvider(): ItemDetailsProvider<K>? {
+        return null
+    }
 
     /**
      * 获取多数情况下通用的垂直布局LayoutManager
