@@ -17,7 +17,7 @@ allprojects {
 ### module build.gradle
 ```gradle
 dependencies {
-    implementation 'com.github.nic562:AndroidFastStart:0.8.2'
+    implementation 'com.github.nic562:AndroidFastStart:0.9'
 }
 ```
 
@@ -61,16 +61,41 @@ class SomeActivity extends ActivityBaseWithImageCrop {
 }
 ```
 
-- 基于 [BRVAH] 封装，使用灵活方便的 RecyclerView，可用于快速构建复杂的数据集展示，自动增量加载等
+- 基于 [BRVAH](https://github.com/CymChad/BaseRecyclerViewAdapterHelper) 封装，使用灵活方便的 RecyclerView，可用于快速构建复杂的数据集展示，自动增量加载等
 ```kotlin
-class SomeActivity : SomethingListable<SomeItem> {
-    override val listableManager = object : SomethingListable.ListableManager<SomeItem>() {
-        // override ...
-    }
+// 常用列表
+class SomeActivity : SomethingListable<SomeItem, Long> {
+    override val listableManager = instanceListableManager(args)
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         // do something
         
         initListable(recyclerView)
+    }
+    
+    override fun loadListableData(page: Int, limit: Int, dataCallback: SomethingListable.OnLoadDataCallback<SomeItem>) {
+        // do something
+    }
+    
+    // some where to call ...
+    fun f() {
+        listableManager.reloadData()
+    }
+    
+}
+
+// 多层次树状列表
+class SomeActivity : SomethingTreeListable<Long> {
+    override val listableManager = instanceListableManager()
+    
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // do something
+        
+        initListable(recyclerView)
+    }
+    
+    override fun loadListableData(page: Int, limit: Int, dataCallback: SomethingTreeListable.OnLoadDataCallback) {
+        // do something
     }
     
     // some where to call ...
@@ -84,9 +109,8 @@ class SomeActivity : SomethingListable<SomeItem> {
 - 整合了 SelectionTracker 用于数据序列的项目批量操作等
 ```kotlin
 class SomeActivity : SomethingListable<SomeItem> {
-    override val listableManager = object : SomethingListable.ListableManager<SomeItem>() {
-        // override ...
-    }
+    override val listableManager = instanceListableManager(args)
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         // do something
         
@@ -97,6 +121,18 @@ class SomeActivity : SomethingListable<SomeItem> {
         
         // 获取 SelectionTracker
         listableManager.getSelectionTracker()
+    }
+    
+    override fun getListableItemDetailsProvider(): ItemDetailsProvider<Long>? {
+        return object : ItemDetailsProvider<Long> {
+            override fun create(): ItemDetails<Long> {
+                return object : ItemDetails<Long>() {
+                    override fun getSelectionKey(): Long? {
+                        return position.toLong()
+                    }
+                }
+            }
+        }
     }
     
     // some where to call ...
