@@ -30,6 +30,10 @@ class ActivityMain : ActivityBaseWithInitPermission() {
         btn_card_raw.setOnClickListener {
             startActivity(intentFor<ActivityCardRaw>())
         }
+
+        btn_Tree.setOnClickListener {
+            startActivity(intentFor<ActivityTree>())
+        }
     }
 
     override val initPermissionsRunnable = object: RunnableWithPermissions {

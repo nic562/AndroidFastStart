@@ -1,0 +1,63 @@
+package io.github.nic562.androidFastStart
+
+import android.view.MotionEvent
+import android.view.View
+import androidx.recyclerview.selection.ItemDetailsLookup
+import androidx.recyclerview.selection.SelectionPredicates
+import androidx.recyclerview.selection.SelectionTracker
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import io.github.nic562.androidFastStart.viewholder.ItemDetails
+
+/**
+ * 实现基于RecyclerView的序列数据展示功能接口
+ *
+ *
+ * Created by Nic on 2020/02/22.
+ */
+interface SomethingListableBase<K> : SomethingWithContext {
+
+    val listableManager: ListableManager<K>
+
+    /**
+     * 获取多数情况下通用的垂直布局LayoutManager
+     *
+     */
+    fun getDefaultListableLayoutManager(): RecyclerView.LayoutManager {
+        val lm = LinearLayoutManager(getOwnerContext())
+        lm.orientation = LinearLayoutManager.VERTICAL
+        return lm
+    }
+
+    fun initListable(recyclerView: RecyclerView,
+                     layoutManager: RecyclerView.LayoutManager = getDefaultListableLayoutManager(),
+                     withDefaultSelectionTracker: Boolean = false) {
+        recyclerView.layoutManager = layoutManager
+        listableManager.setViewContainer(recyclerView)
+        if (withDefaultSelectionTracker) {
+            val selectionKeyProvider = listableManager.getSelectionKeyProvider()
+                    ?: throw NotImplementedError("Using Default SelectionTracker please calling setSelectionKeyProvider(..) at first!")
+            val storageStrategy = listableManager.getStorageStrategy()
+                    ?: throw NotImplementedError("Using Default SelectionTracker please calling setSelectionStorageStrategy(..) at first!")
+            val selectionTracker = SelectionTracker.Builder<K>(
+                    "my_selection",
+                    recyclerView,
+                    selectionKeyProvider,
+                    object : ItemDetailsLookup<K>() {
+                        @Suppress("UNCHECKED_CAST")
+                        override fun getItemDetails(e: MotionEvent): ItemDetails<K>? {
+                            val v = recyclerView.findChildViewUnder(e.x, e.y)
+                            if (v != null) {
+                                return getItemDetails(v)
+                            }
+                            return null
+                        }
+                    },
+                    storageStrategy
+            ).withSelectionPredicate(SelectionPredicates.createSelectAnything<K>()).build()
+            listableManager.setSelectionTracker(selectionTracker)
+        }
+    }
+
+    fun getItemDetails(view: View): ItemDetails<K>?
+}
