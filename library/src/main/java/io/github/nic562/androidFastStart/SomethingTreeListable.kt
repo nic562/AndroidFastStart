@@ -138,7 +138,7 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
 
         private val onLoadDataCallback = object : OnLoadDataCallback {
             override fun onLoadData(data: Collection<TreeAble>, totalCount: Int) {
-                this@TreeListableManager.totalCount = totalCount
+                this@TreeListableManager.mTotalCount = totalCount
                 if (data.isNotEmpty()) {
                     for (x in data) {
                         findAllNodeProvider(x)

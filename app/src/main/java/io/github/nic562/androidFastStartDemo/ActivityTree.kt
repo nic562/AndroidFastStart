@@ -27,7 +27,7 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
                     override val layoutResID: Int = R.layout.layout_tree_child
                     override val children: MutableList<TreeAble>? = null
 
-                    private val title = "child: $i $j"
+                    private val title = "child: $page - $i $j"
 
                     override fun <K> convert(helper: ViewHelper<K>) {
                         helper.hSetText(R.id.tv_tree_child, title)
@@ -39,7 +39,7 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
                 override val layoutResID: Int = R.layout.layout_tree_root
                 override val children: MutableList<TreeAble>? = ch
 
-                private val title = "root: $i"
+                private val title = "root: $page - $i"
 
                 override fun <K> convert(helper: ViewHelper<K>) {
                     helper.hSetText(R.id.tv_tree_root, title)

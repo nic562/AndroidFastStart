@@ -122,7 +122,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
         private val onLoadDataCallback = object : OnLoadDataCallback<T> {
             override fun onLoadData(data: Collection<T>, totalCount: Int) {
-                this@NormalListableManager.totalCount = totalCount
+                this@NormalListableManager.mTotalCount = totalCount
                 if (data.isNotEmpty()) {
                     adapter.data.addAll(data)
                     adapter.notifyDataSetChanged()

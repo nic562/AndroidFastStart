@@ -16,6 +16,20 @@ import java.util.LinkedHashSet
  * Created by Nic on 2020/2/22.
  */
 interface ListableManager<K> {
+    fun getTotalCount(): Int
+
+    fun getLimit(): Int
+
+    fun setLimit(limit: Int)
+
+    fun getCanLoadMore(): Boolean
+
+    fun setCanLoadMore(b: Boolean)
+
+    fun getAutoLoadMore(): Boolean
+
+    fun setAutoLoadMore(b: Boolean)
+
     fun setSelectionTracker(selectionTracker: SelectionTracker<K>)
 
     fun getSelectionTracker(): SelectionTracker<K>?

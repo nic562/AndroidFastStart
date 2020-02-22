@@ -20,13 +20,13 @@ import java.util.LinkedHashSet
  */
 internal
 abstract class ListableManagerBase<T, K, VH: BaseViewHolder> : ListableManager<K> {
-    var totalCount = 0
-        protected set
+    var mTotalCount = 0
+    protected set
 
-    var currPage = 1
-    var limit = 10
-    var canLoadMore = true
-    var autoLoadMore = true
+    private var currPage = 1
+    private var mLimit = 10
+    private var mCanLoadMore = true
+    private var mAutoLoadMore = true
 
     var recyclerView: RecyclerView? = null
         private set
@@ -39,14 +39,14 @@ abstract class ListableManagerBase<T, K, VH: BaseViewHolder> : ListableManager<K
 
     protected fun setLoadMoreModule(loadMoreModule: BaseLoadMoreModule?) {
         loadMoreModule?.apply {
-            isEnableLoadMore = canLoadMore
-            isAutoLoadMore = autoLoadMore
-            isEnableLoadMoreIfNotFullPage = autoLoadMore
+            isEnableLoadMore = mCanLoadMore
+            isAutoLoadMore = mAutoLoadMore
+            isEnableLoadMoreIfNotFullPage = mAutoLoadMore
             setOnLoadMoreListener {
-                if (currPage * limit >= totalCount) {
+                if (currPage * mLimit >= mTotalCount) {
                     loadMoreEnd(true)
                 } else {
-                    myLoadData(++currPage, limit)
+                    myLoadData(++currPage, mLimit)
                 }
             }
         }
@@ -60,9 +60,37 @@ abstract class ListableManagerBase<T, K, VH: BaseViewHolder> : ListableManager<K
         }
     }
 
+    override fun getTotalCount(): Int {
+        return mTotalCount
+    }
+
+    override fun getLimit(): Int {
+        return mLimit
+    }
+
+    override fun setLimit(limit: Int) {
+        this.mLimit = limit
+    }
+
+    override fun getCanLoadMore(): Boolean {
+        return mCanLoadMore
+    }
+
+    override fun setCanLoadMore(b: Boolean) {
+        this.mCanLoadMore = b
+    }
+
+    override fun getAutoLoadMore(): Boolean {
+        return mAutoLoadMore
+    }
+
+    override fun setAutoLoadMore(b: Boolean) {
+        this.mAutoLoadMore = b
+    }
+
     override fun reloadData() {
         clearData()
-        myLoadData(currPage, limit)
+        myLoadData(currPage, mLimit)
     }
 
     override fun setSelectionTracker(selectionTracker: SelectionTracker<K>) {
