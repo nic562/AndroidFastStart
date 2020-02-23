@@ -14,11 +14,19 @@ import java.lang.RuntimeException
 /**
  * 实现基于RecyclerView的序列数据展示功能接口
  *
- * <T, K> 中： T 为 序列数据的类型； K 为 序列数据跟踪器（可重写 getItemDetailsProvider） ItemDetails 的关键字段数据类型
+ * @param T 为 序列数据的类型
+ * @param K 为 序列数据跟踪器（可重写 getItemDetailsProvider） ItemDetails 的关键字段数据类型
+ *
+ * @see SomethingListableBase<K>
  *
  * Created by Nic on 2019/12/20.
  */
 interface SomethingListable<T, K> : SomethingListableBase<K> {
+
+    /**
+     * 暂定义，为后续根据该类功能单独扩展接口而预留
+     */
+    interface DataListableManager<T, K> : ListableManager<K>
 
     interface OnLoadDataCallback<T> {
         fun onLoadData(data: Collection<T>, totalCount: Int)
@@ -30,13 +38,15 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
     fun listableItemConvert(helper: ViewHelper<K>, item: T)
 
-    override fun instanceListableManager(vararg args: Any): ListableManager<K> {
+    override fun instanceListableManager(vararg args: Any): DataListableManager<T, K> {
         if (!(args.isNotEmpty() && args[0] is Int)) {
             throw RuntimeException("The first arg means the [List Item Layout ID], it must be an Int.")
         }
         if (!(args.size > 1 && args[1] is MutableList<*>)) {
             throw RuntimeException("The second arg means the [Data List<T>], it must be an MutableList<T>")
         }
+
+        @Suppress("UNCHECKED_CAST")
         return object : NormalListableManager<T, K>(args[0] as Int, args[1] as MutableList<T>) {
 
             override fun itemConvert(helper: ViewHelper<K>, item: T) {
@@ -53,7 +63,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
         }
     }
 
-    private abstract class NormalListableManager<T, K>(listItemLayoutID: Int, dataList: MutableList<T>) : ListableManagerBase<T, K, ViewHolder<K>>() {
+    private abstract class NormalListableManager<T, K>(listItemLayoutID: Int, dataList: MutableList<T>) : ListableManagerBase<T, K, ViewHolder<K>>(), DataListableManager<T, K> {
 
         private abstract class Adapter<T, K>(layoutID: Int, list: MutableList<T>) :
                 BaseQuickAdapter<T, ViewHolder<K>>(layoutID, list), LoadMoreModule, AnkoLogger {
@@ -144,6 +154,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
             loadData(page, limit, onLoadDataCallback)
         }
 
+        @Suppress("UNCHECKED_CAST")
         override fun getItemDetails(view: View): ItemDetails<K>? {
             val viewHolder = recyclerView?.getChildViewHolder(view) ?: return null
             return (viewHolder as ViewHelper<K>).getItemDetails()

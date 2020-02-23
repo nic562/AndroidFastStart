@@ -16,6 +16,11 @@ import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvi
 import java.util.LinkedHashSet
 
 /**
+ * @param T 为列表的主数据类型
+ * @param K 为SelectionTracker 需要跟中的特点标识
+ * @param VH 为 BaseViewHolder 或其子类。
+ * @see ListableManager
+ *
  * Created by Nic on 2020/2/21.
  */
 internal

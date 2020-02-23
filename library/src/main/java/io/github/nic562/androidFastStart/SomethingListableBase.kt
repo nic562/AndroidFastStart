@@ -13,6 +13,8 @@ import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvi
 /**
  * 实现基于RecyclerView的序列数据展示功能接口
  *
+ * @param K 参考 ListableManager<K>
+ * @see ListableManager<K>
  *
  * Created by Nic on 2020/02/22.
  */

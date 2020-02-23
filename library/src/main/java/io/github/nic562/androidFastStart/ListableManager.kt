@@ -13,6 +13,13 @@ import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvi
 import java.util.LinkedHashSet
 
 /**
+ *
+ * @param K 为SelectionTracker 需要跟中的特点标识
+ * Selection key type. Built in support is provided for String, Long, and Parcelable
+ *           types. Use the respective factory method to create a StorageStrategy instance
+ *           appropriate to the desired type.
+ * @see androidx.recyclerview.selection.StorageStrategy
+ *
  * Created by Nic on 2020/2/22.
  */
 interface ListableManager<K> {

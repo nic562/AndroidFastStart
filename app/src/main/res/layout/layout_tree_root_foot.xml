@@ -5,21 +5,17 @@
     android:orientation="horizontal">
 
     <TextView
-        android:id="@+id/tv_tree_root"
+        android:id="@+id/tv_title"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:textSize="16sp" />
-
-    <Button
-        android:id="@+id/btn_test"
-        android:layout_width="wrap_content"
+        android:textSize="12sp" />
+    <TextView
+        android:id="@+id/tv_content"
+        android:layout_width="100dp"
         android:layout_height="wrap_content"
-        android:text="test" />
-
-    <Button
-        android:id="@+id/btn_test1"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="test1" />
+        android:textAlignment="center"
+        android:textSize="10sp"
+        android:text="ccc"
+        />
 </LinearLayout>

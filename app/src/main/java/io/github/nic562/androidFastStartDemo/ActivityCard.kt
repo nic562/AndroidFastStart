@@ -8,7 +8,6 @@ import androidx.appcompat.view.ActionMode
 import androidx.recyclerview.selection.*
 import com.google.android.material.card.MaterialCardView
 import io.github.nic562.androidFastStart.ActivityBase
-import io.github.nic562.androidFastStart.ListableManager
 import io.github.nic562.androidFastStart.SomethingListable
 import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
@@ -22,7 +21,7 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
 
     private var actionMode: ActionMode? = null
     private val dataList = mutableListOf<String>()
-    override val listableManager: ListableManager<Long> by lazy {
+    override val listableManager: SomethingListable.DataListableManager<String, Long> by lazy {
         instanceListableManager(R.layout.layout_item_card, dataList)
     }
 

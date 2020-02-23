@@ -1,12 +1,17 @@
 package io.github.nic562.androidFastStart
 
 import android.view.View
-import androidx.annotation.LayoutRes
+import android.view.ViewGroup
+import androidx.annotation.IntRange
+import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter.base.BaseNodeAdapter
 import com.chad.library.adapter.base.BaseQuickAdapter
+import com.chad.library.adapter.base.entity.node.BaseExpandNode
 import com.chad.library.adapter.base.entity.node.BaseNode
+import com.chad.library.adapter.base.entity.node.NodeFooterImp
 import com.chad.library.adapter.base.module.LoadMoreModule
 import com.chad.library.adapter.base.provider.BaseNodeProvider
+import com.chad.library.adapter.base.util.getItemView
 import com.chad.library.adapter.base.viewholder.BaseViewHolder
 import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.ViewHolder
@@ -16,9 +21,19 @@ import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.warn
 
 /**
+ * 支持树状结构的数据列表
+ *
+ * @param K 为 序列数据跟踪器（可重写 getItemDetailsProvider） ItemDetails 的关键字段数据类型
+ *
+ * @see SomethingListableBase<K>
+ *
  * Created by Nic on 2020/2/21.
  */
 interface SomethingTreeListable<K> : SomethingListableBase<K> {
+
+    interface TreeListableManager<K>: ListableManager<K> {
+        fun expand(@IntRange(from = 0) position: Int, animate: Boolean = true)
+    }
 
     interface OnLoadDataCallback {
         fun onLoadData(data: Collection<TreeAble>, totalCount: Int)
@@ -30,10 +45,10 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
     }
 
     fun loadListableData(page: Int, limit: Int,
-                 dataCallback: OnLoadDataCallback)
+                         dataCallback: OnLoadDataCallback)
 
-    override fun instanceListableManager(vararg args: Any): ListableManager<K> {
-        return object: TreeListableManager<K>() {
+    override fun instanceListableManager(vararg args: Any): TreeListableManager<K> {
+        return object : MyListableManager<K>() {
             override fun loadData(page: Int, limit: Int, dataCallback: OnLoadDataCallback) {
                 loadListableData(page, limit, dataCallback)
             }
@@ -44,33 +59,63 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
         }
     }
 
-    private abstract class TreeListableManager<K> : ListableManagerBase<BaseNode, K, BaseViewHolder>() {
+    private abstract class MyListableManager<K> : ListableManagerBase<BaseNode, K, BaseViewHolder>(), TreeListableManager<K> {
 
         abstract fun loadData(page: Int, limit: Int,
                               dataCallback: OnLoadDataCallback)
 
         private val providerMap = mutableMapOf<Int, BaseNodeProvider>()
 
-        private val viewHolderMap = mutableMapOf<Int, ViewHolder<K>>()
+        private interface MyNode {
+            val treeNode: TreeAble
 
-        private class Node(val treeNode: TreeAble) : BaseNode() {
-
-            override val childNode: MutableList<BaseNode>? by lazy {
-                if (treeNode.children == null) {
-                    return@lazy null
+            fun mkNodes(ns: MutableList<TreeAble>?): MutableList<BaseNode>? {
+                if (ns == null) {
+                    return null
                 }
                 val l = arrayListOf<BaseNode>()
-                for (x in treeNode.children!!) {
-                    l.add(Node(x))
+                for (x in ns) {
+                    if (x.expandable) {
+                        l.add(ExpandNode(x))
+                    } else {
+                        l.add(Node(x))
+                    }
                 }
-                l
+                return l
+            }
+
+            fun mkFooter(footer: TreeAble?): BaseNode? {
+                if (footer == null) {
+                    return null
+                }
+                return Node(footer)
+            }
+        }
+
+        private class Node(tree: TreeAble) : BaseNode(), NodeFooterImp, MyNode {
+            override val treeNode: TreeAble = tree
+            override val childNode: MutableList<BaseNode>? by lazy {
+                mkNodes(treeNode.children)
+            }
+            override val footerNode: BaseNode? by lazy {
+                mkFooter(treeNode.footer)
+            }
+        }
+
+        private class ExpandNode(tree: TreeAble) : BaseExpandNode(), NodeFooterImp, MyNode {
+            override val treeNode: TreeAble = tree
+            override val childNode: MutableList<BaseNode>? by lazy {
+                mkNodes(treeNode.children)
+            }
+            override val footerNode: BaseNode? by lazy {
+                mkFooter(treeNode.footer)
             }
         }
 
         private abstract class NodeAdapter<K> : BaseNodeAdapter(mutableListOf()), LoadMoreModule, AnkoLogger {
 
             override fun getItemType(data: List<BaseNode>, position: Int): Int {
-                return (data[position] as Node).treeNode.tree
+                return (data[position] as MyNode).treeNode.tree
             }
 
             override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
@@ -112,14 +157,14 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
 
         override val adapter: BaseQuickAdapter<BaseNode, BaseViewHolder> by lazy {
             object : NodeAdapter<K>() {
-                override fun getItemType(data: List<BaseNode>, position: Int): Int {
-                    return (data[position] as Node).treeNode.tree
-                }
 
                 override fun bindItemDetails(holder: BaseViewHolder, position: Int) {
-                    val vh = this@TreeListableManager.getViewHolder(holder.itemView)
+                    if (holder !is ViewHolder<*>) {
+                        return
+                    }
+                    val vh = exchangeViewHolder(holder)
                     if (vh.itemDetailsProvider == null) {
-                        vh.itemDetailsProvider = this@TreeListableManager.getItemDetailsProvider()
+                        vh.itemDetailsProvider = this@MyListableManager.getItemDetailsProvider()
                     }
                     when (vh.itemViewType) {
                         EMPTY_VIEW, HEADER_VIEW, FOOTER_VIEW, LOAD_MORE_VIEW -> {
@@ -136,13 +181,22 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
             }
         }
 
+        @Suppress("UNCHECKED_CAST")
+        override fun expand(position: Int, animate: Boolean) {
+            (adapter as NodeAdapter<K>).expandOrCollapse(position, animate)
+        }
+
         private val onLoadDataCallback = object : OnLoadDataCallback {
             override fun onLoadData(data: Collection<TreeAble>, totalCount: Int) {
-                this@TreeListableManager.mTotalCount = totalCount
+                this@MyListableManager.mTotalCount = totalCount
                 if (data.isNotEmpty()) {
                     for (x in data) {
                         findAllNodeProvider(x)
-                        adapter.addData(Node(x))
+                        if (x.expandable) {
+                            adapter.addData(ExpandNode(x))
+                        } else {
+                            adapter.addData(Node(x))
+                        }
                     }
                 }
                 adapter.loadMoreModule?.loadMoreComplete()
@@ -154,7 +208,8 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
         }
 
         override fun getItemDetails(view: View): ItemDetails<K>? {
-            return viewHolderMap[view.hashCode()]?.getItemDetails()
+            val viewHolder = recyclerView?.getChildViewHolder(view) ?: return null
+            return (exchangeViewHolder(viewHolder)).getItemDetails()
         }
 
         override fun myLoadData(page: Int, limit: Int) {
@@ -163,7 +218,10 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
 
         private fun findAllNodeProvider(tree: TreeAble) {
             if (providerMap[tree.tree] == null) {
-                providerMap[tree.tree] = getNodeProvider(tree.tree, tree.layoutResID)
+                providerMap[tree.tree] = getNodeProvider(tree)
+            }
+            if (tree.footer != null) {
+                findAllNodeProvider(tree.footer!!)
             }
             if (!tree.children.isNullOrEmpty()) {
                 for (x in tree.children!!) {
@@ -172,31 +230,63 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
             }
         }
 
-        private fun getNodeProvider(tree: Int, @LayoutRes layoutResID: Int): BaseNodeProvider {
+        @Suppress("UNCHECKED_CAST")
+        private fun exchangeViewHolder(h: RecyclerView.ViewHolder): ViewHolder<K> {
+            return h as ViewHolder<K>
+        }
+
+        private fun getNodeProvider(treeN: TreeAble): BaseNodeProvider {
             return object : BaseNodeProvider() {
-                override val itemViewType = tree
-                override val layoutId = layoutResID
+                override val itemViewType = treeN.tree
+                override val layoutId: Int = treeN.layoutResID
+
+                init {
+                    if (treeN.childClickViewIds != null) {
+                        addChildClickViewIds(*treeN.childClickViewIds!!)
+                    }
+                    if (treeN.childLongClickViewIds != null) {
+                        addChildLongClickViewIds(*treeN.childLongClickViewIds!!)
+                    }
+                }
 
                 override fun convert(helper: BaseViewHolder, data: BaseNode?) {
                     if (data == null) {
                         return
                     }
-                    val h = getViewHolder(helper.itemView)
-                    val n = data as Node
-                    n.treeNode.convert(h)
+                    val n = data as MyNode
+                    n.treeNode.convert(exchangeViewHolder(helper))
+                }
+
+                override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder<K> {
+                    return ViewHolder(parent.getItemView(layoutId))
+                }
+
+                override fun onChildClick(helper: BaseViewHolder, view: View, data: BaseNode, position: Int) {
+                    if (treeN.onChildClick == null)
+                        return super.onChildClick(helper, view, data, position)
+                    treeN.onChildClick!!.onChildClick(exchangeViewHolder(helper), view, (data as MyNode).treeNode, position)
+                }
+
+                override fun onChildLongClick(helper: BaseViewHolder, view: View, data: BaseNode, position: Int): Boolean {
+                    if (treeN.onChildLongClick == null)
+                        return super.onChildLongClick(helper, view, data, position)
+                    return treeN.onChildLongClick!!.onChildLongClick(exchangeViewHolder(helper), view, (data as MyNode).treeNode, position)
+                }
+
+                override fun onClick(helper: BaseViewHolder, view: View, data: BaseNode, position: Int) {
+                    if (treeN.onClick == null)
+                        return super.onClick(helper, view, data, position)
+                    treeN.onClick!!.onClick(exchangeViewHolder(helper), view, (data as MyNode).treeNode, position)
+                }
+
+                override fun onLongClick(helper: BaseViewHolder, view: View, data: BaseNode, position: Int): Boolean {
+                    if (treeN.onLongClick == null)
+                        return super.onLongClick(helper, view, data, position)
+                    return treeN.onLongClick!!.onLongClick(exchangeViewHolder(helper), view, (data as MyNode).treeNode, position)
                 }
             }.apply {
                 (adapter as BaseNodeAdapter).addNodeProvider(this)
             }
-        }
-
-        private fun getViewHolder(view: View): ViewHolder<K> {
-            val c = view.hashCode()
-
-            if (viewHolderMap[c] == null) {
-                viewHolderMap[c] = ViewHolder(view)
-            }
-            return viewHolderMap[c]!!
         }
     }
 
