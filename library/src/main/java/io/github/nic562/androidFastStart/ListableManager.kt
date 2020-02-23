@@ -23,6 +23,18 @@ import java.util.LinkedHashSet
  * Created by Nic on 2020/2/22.
  */
 interface ListableManager<K> {
+
+    /**
+     * 额外功能支持
+     * @property WITH_UP_FETCH 提供该上拉加载事件支持。只有提供该标识，setUpFetch* 才生效
+     * @property WITH_DRAGGABLE 提供拖拽、侧滑事件支持。只有提供该标识 setItemDrag* 和 setItemSwipe* 才生效。另外如果列表还实现了SelectionTracker支持，请一定要处理事件的生效与关闭，否则会出现冲突。
+     * @property WITH_DRAGGABLE_AND_UP_FETCH 上述事件支持均生效
+     * @property NORMAL 上述事件支持均不生效
+     */
+    enum class EXT {
+        WITH_UP_FETCH, WITH_DRAGGABLE, WITH_DRAGGABLE_AND_UP_FETCH, NORMAL
+    }
+
     fun getTotalCount(): Int
 
     fun getLimit(): Int
@@ -37,6 +49,8 @@ interface ListableManager<K> {
 
     fun setAutoLoadMore(b: Boolean)
 
+    fun getSelectionTrackerEnable(): Boolean
+    fun setSelectionTrackerEnable(b: Boolean)
     fun setSelectionTracker(selectionTracker: SelectionTracker<K>)
 
     fun getSelectionTracker(): SelectionTracker<K>?
@@ -107,17 +121,29 @@ interface ListableManager<K> {
      */
     fun setFooterWithEmptyEnable(boolean: Boolean)
 
-    fun setItemClickListener(listener: OnItemClickListener)
+    fun setItemClickListener(listener: OnItemClickListener?)
 
-    fun setItemLongClickListener(listener: OnItemLongClickListener)
+    fun setItemLongClickListener(listener: OnItemLongClickListener?)
 
-    fun setItemChildClickListener(listener: OnItemChildClickListener)
+    fun setItemChildClickListener(listener: OnItemChildClickListener?)
 
-    fun setItemChildLongClickListener(listener: OnItemChildLongClickListener)
+    fun setItemChildLongClickListener(listener: OnItemChildLongClickListener?)
 
     fun addChildClickViewIds(@IdRes vararg viewIds: Int)
 
     fun getChildLongClickViewIds(): LinkedHashSet<Int>
 
     fun setAnimationEnable(boolean: Boolean)
+
+    fun setItemDragFlags(flag: Int)
+    fun setItemDragEnable(boolean: Boolean)
+    fun setItemDragListener(listener: OnItemDragListener?)
+
+    fun setItemSwipeFlags(flag: Int)
+    fun setItemSwipeEnable(boolean: Boolean)
+    fun setItemSwipeListener(listener: OnItemSwipeListener?)
+
+    fun setUpFetchListener(listener: OnUpFetchListener?)
+    fun setUpFetchEnable(boolean: Boolean)
+    fun setUpFetching(boolean: Boolean)
 }

@@ -56,8 +56,11 @@ interface SomethingListableBase<K> : SomethingWithContext {
                     recyclerView,
                     selectionKeyProvider,
                     object : ItemDetailsLookup<K>() {
-                        @Suppress("UNCHECKED_CAST")
                         override fun getItemDetails(e: MotionEvent): ItemDetails<K>? {
+                            if (!listableManager.getSelectionTrackerEnable()) {
+                                // 目前找不到其他方法来禁用SelectionTracker，以此方法代为实现禁用，暂不知会否造成bug
+                                return null
+                            }
                             val v = recyclerView.findChildViewUnder(e.x, e.y)
                             if (v != null) {
                                 return getItemDetails(v)

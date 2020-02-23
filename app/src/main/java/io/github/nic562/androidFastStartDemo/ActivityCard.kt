@@ -1,18 +1,27 @@
 package io.github.nic562.androidFastStartDemo
 
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.view.ActionMode
-import androidx.recyclerview.selection.*
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.selection.ItemKeyProvider
+import androidx.recyclerview.selection.SelectionTracker
+import androidx.recyclerview.selection.StorageStrategy
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
-import io.github.nic562.androidFastStart.ActivityBase
-import io.github.nic562.androidFastStart.SomethingListable
+import io.github.nic562.androidFastStart.*
 import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
 import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 import kotlinx.android.synthetic.main.activity_card.*
+import org.jetbrains.anko.toast
 
 /**
  * Created by Nic on 2019/12/25.
@@ -22,7 +31,8 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
     private var actionMode: ActionMode? = null
     private val dataList = mutableListOf<String>()
     override val listableManager: SomethingListable.DataListableManager<String, Long> by lazy {
-        instanceListableManager(R.layout.layout_item_card, dataList)
+        instanceListableManager(R.layout.layout_item_card, dataList, ListableManager.EXT.WITH_DRAGGABLE)
+        // 开启拖拽滑动支持
     }
 
     override fun loadListableData(page: Int, limit: Int, dataCallback: SomethingListable.OnLoadDataCallback<String>) {
@@ -82,11 +92,70 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                 }
             })
 
+            setItemDragListener(object : OnItemDragListener {
+                override fun onItemDragMoving(source: RecyclerView.ViewHolder?, from: Int, target: RecyclerView.ViewHolder?, to: Int) {
+                    println("drag move from ${source?.adapterPosition} ::: $from to ${target?.adapterPosition} ::: $to")
+                }
+
+                override fun onItemDragStart(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("drag start from :::::: $pos")
+                    val startColor = Color.WHITE
+                    val endColor = Color.rgb(245, 245, 245)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        ValueAnimator.ofArgb(startColor, endColor).apply {
+                            addUpdateListener {
+                                viewHolder?.itemView?.setBackgroundColor(it.animatedValue as Int)
+                            }
+                            duration = 300
+                            start()
+                        }
+                    } else {
+                        print("Value Animator not support!!!!!")
+                    }
+                }
+
+                override fun onItemDragEnd(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("drag end to :::::: $pos")
+                    val endColor = Color.WHITE
+                    val startColor = Color.rgb(245, 245, 245)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        ValueAnimator.ofArgb(startColor, endColor).apply {
+                            addUpdateListener {
+                                viewHolder?.itemView?.setBackgroundColor(it.animatedValue as Int)
+                            }
+                            duration = 300
+                            start()
+                        }
+                    } else {
+                        print("Value Animator not support!!!!!")
+                    }
+                }
+            })
+            setItemDragFlags(ItemTouchHelper.DOWN)
+            setItemSwipeListener(object: OnItemSwipeListener {
+                override fun onItemSwipeStart(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("swipe start from $pos")
+                }
+
+                override fun clearView(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("swipe clear!!!!!!!!")
+                }
+
+                override fun onItemSwiped(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("swipe end::: $pos")
+                }
+
+                override fun onItemSwipeMoving(canvas: Canvas?, viewHolder: RecyclerView.ViewHolder?, dX: Float, dY: Float, isCurrentlyActive: Boolean) {
+                    println("swipe on $dX x $dY  ($isCurrentlyActive)")
+                    canvas?.drawColor(ContextCompat.getColor(this@ActivityCard, R.color.colorAccent))
+                }
+            })
+            setItemSwipeFlags(ItemTouchHelper.START)
             initListable(rv_cards, withDefaultSelectionTracker = true)
             setEmptyView(R.layout.layout_list_empty)
             addHeaderView(R.layout.layout_header)
             addFooterView(R.layout.layout_footer)
-            with(getSelectionTracker()!!) {
+            getSelectionTracker()?.apply {
                 addObserver(object : SelectionTracker.SelectionObserver<Long>() {
                     override fun onSelectionChanged() {
                         println(">>> $selection")
@@ -103,6 +172,8 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                     }
                 })
             }
+            setItemDragEnable(false) // 先禁止拖拽模式，启用 selectionTracker 模式
+            setItemSwipeEnable(false)
         }
     }
 
@@ -111,16 +182,41 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
         listableManager.reloadData()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.dragged, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when(item.itemId) {
+            R.id.action_drag -> {
+                listableManager.apply {
+                    setSelectionTrackerEnable(!getSelectionTrackerEnable())
+                    setItemDragEnable(!getSelectionTrackerEnable())
+                    setItemSwipeEnable(!getSelectionTrackerEnable())
+                    if (getSelectionTrackerEnable()) {
+                        toast("现在多选模式")
+                    } else {
+                        toast("现在拖拽滑动模式")
+                    }
+
+                }
+                return true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
     override fun getOwnerContext(): Context {
         return this
     }
 
     override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
         if (item?.itemId == R.id.action_del) {
-            with(listableManager.getSelectionTracker()!!) {
+            listableManager.getSelectionTracker()?.apply {
                 val delItems = arrayListOf<String>()
                 // 必须要注意这里，头部元素会占用列表一个席位，所以必须手动调整 selectionTracker 中记录的 position
-                val fix = if(listableManager.hasHeaderLayout()) -1 else 0
+                val fix = if (listableManager.hasHeaderLayout()) -1 else 0
                 for (x in selection) {
                     val p = listableManager.getSelectionKeyProvider()!!.getPosition(x) + fix
                     delItems.add(dataList[p])

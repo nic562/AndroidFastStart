@@ -1,12 +1,18 @@
 package io.github.nic562.androidFastStartDemo
 
+import android.animation.ValueAnimator
 import android.content.Context
+import android.graphics.Canvas
+import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.widget.Toast
 import androidx.annotation.LayoutRes
-import io.github.nic562.androidFastStart.ActivityBase
-import io.github.nic562.androidFastStart.SomethingTreeListable
+import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.ItemTouchHelper
+import androidx.recyclerview.widget.RecyclerView
+import io.github.nic562.androidFastStart.*
 import io.github.nic562.androidFastStart.viewholder.BaseTree
 import io.github.nic562.androidFastStart.viewholder.`interface`.TreeAble
 import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
@@ -17,7 +23,7 @@ import kotlinx.android.synthetic.main.activity_card.*
  */
 class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
     override val listableManager: SomethingTreeListable.TreeListableManager<Long> by lazy {
-        instanceListableManager()
+        instanceListableManager(ListableManager.EXT.WITH_DRAGGABLE)
     }
 
     private val onExpandClick = object : TreeAble.OnClick {
@@ -179,7 +185,65 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
             setAnimationEnable(true)
             setHeaderWithEmptyEnable(true)
             setFooterWithEmptyEnable(true)
+            setItemDragListener(object : OnItemDragListener {
+                override fun onItemDragMoving(source: RecyclerView.ViewHolder?, from: Int, target: RecyclerView.ViewHolder?, to: Int) {
+                    println("drag move from ${source?.adapterPosition} ::: $from to ${target?.adapterPosition} ::: $to")
+                }
 
+                override fun onItemDragStart(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("drag start from :::::: $pos")
+                    val startColor = Color.WHITE
+                    val endColor = Color.rgb(245, 245, 245)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        ValueAnimator.ofArgb(startColor, endColor).apply {
+                            addUpdateListener {
+                                viewHolder?.itemView?.setBackgroundColor(it.animatedValue as Int)
+                            }
+                            duration = 300
+                            start()
+                        }
+                    } else {
+                        print("Value Animator not support!!!!!")
+                    }
+                }
+
+                override fun onItemDragEnd(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("drag end to :::::: $pos")
+                    val endColor = Color.WHITE
+                    val startColor = Color.rgb(245, 245, 245)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        ValueAnimator.ofArgb(startColor, endColor).apply {
+                            addUpdateListener {
+                                viewHolder?.itemView?.setBackgroundColor(it.animatedValue as Int)
+                            }
+                            duration = 300
+                            start()
+                        }
+                    } else {
+                        print("Value Animator not support!!!!!")
+                    }
+                }
+            })
+            setItemDragFlags(ItemTouchHelper.DOWN or ItemTouchHelper.UP)
+            setItemSwipeListener(object: OnItemSwipeListener {
+                override fun onItemSwipeStart(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("swipe start from $pos")
+                }
+
+                override fun clearView(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("swipe clear!!!!!!!!")
+                }
+
+                override fun onItemSwiped(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
+                    println("swipe end::: $pos")
+                }
+
+                override fun onItemSwipeMoving(canvas: Canvas?, viewHolder: RecyclerView.ViewHolder?, dX: Float, dY: Float, isCurrentlyActive: Boolean) {
+                    println("swipe on $dX x $dY  ($isCurrentlyActive)")
+                    canvas?.drawColor(ContextCompat.getColor(this@ActivityTree, R.color.colorAccent))
+                }
+            })
+            setItemSwipeFlags(ItemTouchHelper.START)
             initListable(rv_cards)
             setEmptyView(R.layout.layout_list_empty)
             addHeaderView(R.layout.layout_header)
