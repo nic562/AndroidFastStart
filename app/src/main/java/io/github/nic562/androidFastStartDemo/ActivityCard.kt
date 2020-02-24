@@ -21,7 +21,9 @@ import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
 import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 import kotlinx.android.synthetic.main.activity_card.*
+import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
+import kotlin.random.Random
 
 /**
  * Created by Nic on 2019/12/25.
@@ -36,6 +38,14 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
     }
 
     override fun loadListableData(page: Int, limit: Int, dataCallback: SomethingListable.OnLoadDataCallback<String>) {
+        swipeRefreshLayout.isRefreshing = false
+        listableManager.setCanLoadMore(true)
+        if (Random(System.currentTimeMillis()).nextInt() % 3 == 0) {
+            longToast("测试错误！！~~")
+            println("page: $page 测试错误！！~~")
+            dataCallback.onError()
+            return
+        }
         val l = arrayListOf<String>()
         for (i in 1..limit) {
             l.add("$page ${page * limit + i}")
@@ -76,6 +86,10 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_card)
+
+        swipeRefreshLayout.setOnRefreshListener {
+            loadDelay()
+        }
 
         listableManager.apply {
             setAnimationEnable(true)
@@ -179,7 +193,15 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
 
     override fun onStart() {
         super.onStart()
-        listableManager.reloadData()
+        loadDelay()
+    }
+
+    private fun loadDelay() {
+        listableManager.setCanLoadMore(false) // 防止触发下拉加载数据事件
+        swipeRefreshLayout.isRefreshing = true
+        rv_cards.postDelayed({
+            listableManager.reloadData()
+        }, 2000)
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

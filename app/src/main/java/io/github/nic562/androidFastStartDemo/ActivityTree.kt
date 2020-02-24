@@ -161,6 +161,8 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
 
 
     override fun loadListableData(page: Int, limit: Int, dataCallback: SomethingTreeListable.OnLoadDataCallback) {
+        swipeRefreshLayout.isRefreshing = false
+        listableManager.setCanLoadMore(true)
         val data = arrayListOf<TreeAble>()
         for (i in 0 until limit) {
             val ch = arrayListOf<TreeAble>()
@@ -180,6 +182,10 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_card)
+
+        swipeRefreshLayout.setOnRefreshListener {
+            loadDelay()
+        }
 
         listableManager.apply {
             setAnimationEnable(true)
@@ -258,7 +264,15 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
 
     override fun onStart() {
         super.onStart()
-        listableManager.reloadData()
+        loadDelay()
+    }
+
+    private fun loadDelay() {
+        listableManager.setCanLoadMore(false) // 防止触发下拉加载数据事件
+        swipeRefreshLayout.isRefreshing = true
+        rv_cards.postDelayed({
+            listableManager.reloadData()
+        }, 2000)
     }
 
     override fun getOwnerContext(): Context {

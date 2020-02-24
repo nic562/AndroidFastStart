@@ -242,12 +242,13 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
                             adapter.addData(Node(x))
                         }
                     }
+                    increasePage()
                 }
                 adapter.loadMoreModule?.loadMoreComplete()
             }
 
             override fun onError() {
-                adapter.loadMoreModule?.loadMoreComplete()
+                adapter.loadMoreModule?.loadMoreFail()
             }
         }
 

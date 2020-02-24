@@ -205,12 +205,13 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                 if (data.isNotEmpty()) {
                     adapter.data.addAll(data)
                     adapter.notifyDataSetChanged()
+                    increasePage()
                 }
                 adapter.loadMoreModule?.loadMoreComplete()
             }
 
             override fun onError() {
-                adapter.loadMoreModule?.loadMoreComplete()
+                adapter.loadMoreModule?.loadMoreFail()
             }
         }
 

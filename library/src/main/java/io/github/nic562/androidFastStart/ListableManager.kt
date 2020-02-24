@@ -35,6 +35,9 @@ interface ListableManager<K> {
         WITH_UP_FETCH, WITH_DRAGGABLE, WITH_DRAGGABLE_AND_UP_FETCH, NORMAL
     }
 
+    fun getPage(): Int
+    fun increasePage(): Int
+
     fun getTotalCount(): Int
 
     fun getLimit(): Int

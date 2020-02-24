@@ -32,7 +32,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
     var mTotalCount = 0
         protected set
 
-    private var currPage = 1
+    private var currPage = 0
     private var mLimit = 10
     private var mCanLoadMore = true
     private var mAutoLoadMore = true
@@ -57,9 +57,9 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
             isEnableLoadMoreIfNotFullPage = mAutoLoadMore
             setOnLoadMoreListener {
                 if (currPage * mLimit >= mTotalCount) {
-                    loadMoreEnd(true)
+                    loadMoreEnd()
                 } else {
-                    myLoadData(++currPage, mLimit)
+                    myLoadData(currPage+1, mLimit)
                 }
             }
         }
@@ -71,6 +71,14 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
         } else {
             throw RuntimeException("View container had not been provide! Please call `setViewContainer()` first.")
         }
+    }
+
+    override fun getPage(): Int {
+        return currPage
+    }
+
+    override fun increasePage(): Int {
+        return ++currPage
     }
 
     override fun getTotalCount(): Int {
@@ -91,6 +99,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     override fun setCanLoadMore(b: Boolean) {
         this.mCanLoadMore = b
+        adapter.loadMoreModule?.isEnableLoadMore = this.mCanLoadMore
     }
 
     override fun getAutoLoadMore(): Boolean {
@@ -99,11 +108,12 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     override fun setAutoLoadMore(b: Boolean) {
         this.mAutoLoadMore = b
+        adapter.loadMoreModule?.isAutoLoadMore = this.mAutoLoadMore
     }
 
     override fun reloadData() {
         clearData()
-        myLoadData(currPage, mLimit)
+        myLoadData(currPage+1, mLimit)
     }
 
     override fun getSelectionTrackerEnable(): Boolean {
@@ -161,7 +171,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
     override fun clearData() {
         adapter.data.clear()
         adapter.notifyDataSetChanged()
-        currPage = 1
+        currPage = 0
     }
 
     override fun notifyDataSetChanged() {
