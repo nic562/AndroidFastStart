@@ -35,7 +35,7 @@ internal class ViewHolder<K>(view: View) : BaseViewHolder(view), ViewHelper<K> {
         return this
     }
 
-    override fun hSetText(@IdRes viewId: Int, @StringRes strId: Int): ViewHelper<K>? {
+    override fun hSetText(@IdRes viewId: Int, @StringRes strId: Int): ViewHelper<K> {
         setText(viewId, strId)
         return this
     }
@@ -55,22 +55,22 @@ internal class ViewHolder<K>(view: View) : BaseViewHolder(view), ViewHelper<K> {
         return this
     }
 
-    override fun hSetImageDrawable(@IdRes viewId: Int, drawable: Drawable?): ViewHelper<K>? {
+    override fun hSetImageDrawable(@IdRes viewId: Int, drawable: Drawable?): ViewHelper<K> {
         setImageDrawable(viewId, drawable)
         return this
     }
 
-    override fun hSetImageBitmap(@IdRes viewId: Int, bitmap: Bitmap?): ViewHelper<K>? {
+    override fun hSetImageBitmap(@IdRes viewId: Int, bitmap: Bitmap?): ViewHelper<K> {
         setImageBitmap(viewId, bitmap)
         return this
     }
 
-    override fun hSetBackgroundColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper<K>? {
+    override fun hSetBackgroundColor(@IdRes viewId: Int, @ColorInt color: Int): ViewHelper<K> {
         setBackgroundColor(viewId, color)
         return this
     }
 
-    override fun hSetBackgroundResource(@IdRes viewId: Int, @DrawableRes backgroundRes: Int): ViewHelper<K>? {
+    override fun hSetBackgroundResource(@IdRes viewId: Int, @DrawableRes backgroundRes: Int): ViewHelper<K> {
         setBackgroundResource(viewId, backgroundRes)
         return this
     }

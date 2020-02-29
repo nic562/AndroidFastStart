@@ -42,7 +42,7 @@ dependencies {
     implementation 'pub.devrel:easypermissions:3.0.0'
 
     // https://github.com/CymChad/BaseRecyclerViewAdapterHelper
-    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.0-beta11'
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.1'
 
     api "androidx.recyclerview:recyclerview:$androidx_version"
     api "androidx.recyclerview:recyclerview-selection:1.0.0"

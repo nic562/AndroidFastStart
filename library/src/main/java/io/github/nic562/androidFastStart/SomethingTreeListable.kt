@@ -153,7 +153,7 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
          * onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) 也直接忽略了 payloads参数而，所以本实现也依照该方式。
          * 这可能需要 或者针对不同的事件做不同响应，暂时无法预料，先留坑。
          */
-        override fun convert(helper: BaseViewHolder, item: BaseNode?, payloads: List<Any>) {
+        override fun convert(helper: BaseViewHolder, item: BaseNode, payloads: List<Any>) {
             warn("onBindViewHolder with playLoads ::: $payloads ${payloads[0].javaClass}")
             convert(helper, item)
         }
@@ -294,10 +294,7 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
                     }
                 }
 
-                override fun convert(helper: BaseViewHolder, data: BaseNode?) {
-                    if (data == null) {
-                        return
-                    }
+                override fun convert(helper: BaseViewHolder, data: BaseNode) {
                     val n = data as MyNode
                     n.treeNode.convert(exchangeViewHolder(helper))
                 }

@@ -113,7 +113,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
          * onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) 也直接忽略了 payloads参数而，所以本实现也依照该方式。
          * 这可能需要 或者针对不同的事件做不同响应，暂时无法预料，先留坑。
          */
-        override fun convert(helper: ViewHolder<K>, item: T?, payloads: List<Any>) {
+        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
             warn("onBindViewHolder with playLoads ::: $payloads ${payloads[0].javaClass}")
             convert(helper, item)
         }
@@ -145,7 +145,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
             val a = when (ext) {
                 ListableManager.EXT.WITH_DRAGGABLE_AND_UP_FETCH -> {
                     object : AdapterWithDraggableAndUpFetch<T, K>(listItemLayoutID, dataList) {
-                        override fun convert(helper: ViewHolder<K>, item: T?) {
+                        override fun convert(helper: ViewHolder<K>, item: T) {
                             if (item != null) {
                                 itemConvert(helper, item)
                             }
@@ -158,7 +158,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                 }
                 ListableManager.EXT.WITH_DRAGGABLE -> {
                     object : AdapterWithDraggable<T, K>(listItemLayoutID, dataList) {
-                        override fun convert(helper: ViewHolder<K>, item: T?) {
+                        override fun convert(helper: ViewHolder<K>, item: T) {
                             if (item != null) {
                                 itemConvert(helper, item)
                             }
@@ -171,7 +171,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                 }
                 ListableManager.EXT.WITH_UP_FETCH -> {
                     object : AdapterWithUpFetch<T, K>(listItemLayoutID, dataList) {
-                        override fun convert(helper: ViewHolder<K>, item: T?) {
+                        override fun convert(helper: ViewHolder<K>, item: T) {
                             if (item != null) {
                                 itemConvert(helper, item)
                             }
@@ -184,7 +184,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                 }
                 ListableManager.EXT.NORMAL -> {
                     object : Adapter<T, K>(listItemLayoutID, dataList) {
-                        override fun convert(helper: ViewHolder<K>, item: T?) {
+                        override fun convert(helper: ViewHolder<K>, item: T) {
                             if (item != null) {
                                 itemConvert(helper, item)
                             }
