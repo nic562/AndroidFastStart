@@ -17,6 +17,7 @@ import io.github.nic562.androidFastStart.viewholder.BaseTree
 import io.github.nic562.androidFastStart.viewholder.`interface`.TreeAble
 import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 import kotlinx.android.synthetic.main.activity_card.*
+import org.jetbrains.anko.toast
 
 /**
  * Created by Nic on 2020/2/22.
@@ -29,12 +30,22 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
     private val onExpandClick = object : TreeAble.OnClick {
         override fun <K> onClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int) {
             listableManager.expand(position)
+            if(listableManager.isExpanded(position)) {
+                toast("展开")
+            } else {
+                toast("收起")
+            }
         }
     }
 
     private val onExpandLongClick = object : TreeAble.OnLongClick {
         override fun <K> onLongClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int): Boolean {
             listableManager.expand(position)
+            if(listableManager.isExpanded(position)) {
+                toast("展开")
+            } else {
+                toast("收起")
+            }
             return true
         }
     }

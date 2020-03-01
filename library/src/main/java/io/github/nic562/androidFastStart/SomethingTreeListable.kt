@@ -35,6 +35,7 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
 
     interface TreeListableManager<K>: ListableManager<K> {
         fun expand(@IntRange(from = 0) position: Int, animate: Boolean = true)
+        fun isExpanded(@IntRange(from = 0) position: Int): Boolean
     }
 
     interface OnLoadDataCallback {
@@ -228,6 +229,15 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
         @Suppress("UNCHECKED_CAST")
         override fun expand(position: Int, animate: Boolean) {
             (adapter as Adapter<K>).expandOrCollapse(position, animate)
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        override fun isExpanded(position: Int): Boolean {
+            val data = (adapter as Adapter<K>).data[position]
+            if (data is ExpandNode) {
+                return data.isExpanded
+            }
+            return false
         }
 
         private val onLoadDataCallback = object : OnLoadDataCallback {
