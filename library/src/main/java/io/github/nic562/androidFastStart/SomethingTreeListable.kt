@@ -20,7 +20,6 @@ import io.github.nic562.androidFastStart.viewholder.ViewHolder
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
 import io.github.nic562.androidFastStart.viewholder.`interface`.TreeAble
 import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.warn
 
 /**
  * 支持树状结构的数据列表
@@ -34,7 +33,20 @@ import org.jetbrains.anko.warn
 interface SomethingTreeListable<K> : SomethingListableBase<K> {
 
     interface TreeListableManager<K>: ListableManager<K> {
-        fun expand(@IntRange(from = 0) position: Int, animate: Boolean = true)
+        /**
+         * 展开或收起节点
+         * @param position 需要收起或展开的节点所在位置。使用使用动画
+         * @param notifyDataChange 是否发起数据变更通知，同： adapter.notifyDataSetChanged. 例如手动执行 UI 修改等，请设置为false。
+         * @param animate 是否执行动画， 仅在 notifyDataChange 为 true 时才有效
+         * @param payload 局部更新的标记对象，仅在 animate 为 true 时才有效
+         * @return 结果为 true 时，表明该方法执行后为展开状态；为 false 时，表明该方法执行后为收起状态
+         */
+        fun expand(@IntRange(from = 0) position: Int, notifyDataChange: Boolean = true, animate: Boolean = true, payload: Any? = null): Boolean
+
+        /**
+         * 判断节点 的展开状态
+         *  @return 展开时为 true，收起时为 false
+         */
         fun isExpanded(@IntRange(from = 0) position: Int): Boolean
     }
 
@@ -139,25 +151,6 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
          * 目前该 ItemDetails 只在 SelectionTracker 中用到，所以并不会对其他组件造成影响。
          */
         abstract fun bindItemDetails(holder: BaseViewHolder, position: Int)
-
-        /**
-         * 局部刷新所用的方法
-         *
-         * 使用 selectionTracker 时 必须重写该方法
-         *
-         * selectionTracker 的事件触发调用了onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>)
-         *
-         * 父类实现并没有实现该方法，造成selectionTracker 触发后UI上无更新
-         *
-         * @param payloads 如果是 selectionTracker 触发的，会相应到一个 `Selection-Changed` 的字符串
-         * 官方RecyclerView.Adapter 源码中的
-         * onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) 也直接忽略了 payloads参数而，所以本实现也依照该方式。
-         * 这可能需要 或者针对不同的事件做不同响应，暂时无法预料，先留坑。
-         */
-        override fun convert(helper: BaseViewHolder, item: BaseNode, payloads: List<Any>) {
-            warn("onBindViewHolder with playLoads ::: $payloads ${payloads[0].javaClass}")
-            convert(helper, item)
-        }
     }
 
     private abstract class AdapterWithDraggableAndUpFetch<K>: Adapter<K>(), UpFetchModule, DraggableModule
@@ -227,8 +220,9 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
         }
 
         @Suppress("UNCHECKED_CAST")
-        override fun expand(position: Int, animate: Boolean) {
-            (adapter as Adapter<K>).expandOrCollapse(position, animate)
+        override fun expand(position: Int, notifyDataChange: Boolean, animate: Boolean, payload: Any?): Boolean {
+            (adapter as Adapter<K>).expandOrCollapse(position, animate, notifyDataChange, payload)
+            return isExpanded(position)
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -307,6 +301,11 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
                 override fun convert(helper: BaseViewHolder, data: BaseNode) {
                     val n = data as MyNode
                     n.treeNode.convert(exchangeViewHolder(helper))
+                }
+
+                override fun convert(helper: BaseViewHolder, data: BaseNode, payloads: List<Any>) {
+                    val n = data as MyNode
+                    n.treeNode.convert(exchangeViewHolder(helper), payloads)
                 }
 
                 override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder<K> {

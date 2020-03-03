@@ -23,6 +23,11 @@ interface TreeAble {
     val children: MutableList<TreeAble>?
     fun <K> convert(helper: ViewHelper<K>)
 
+    /**
+     * 局部更新请重写该方法
+     */
+    fun <K> convert(helper: ViewHelper<K>, payloads: List<Any>) {}
+
     val expandable: Boolean
     val footer: TreeAble?
 

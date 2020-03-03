@@ -7,9 +7,12 @@ import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
+import android.view.animation.DecelerateInterpolator
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.annotation.LayoutRes
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import io.github.nic562.androidFastStart.*
@@ -23,25 +26,33 @@ import org.jetbrains.anko.toast
  * Created by Nic on 2020/2/22.
  */
 class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
+    companion object {
+        fun rotationImageView(iv: ImageView, rotation: Float, animate: Boolean = true) {
+            if (animate)
+                ViewCompat.animate(iv).apply {
+                    duration = 200
+                    interpolator = DecelerateInterpolator()
+                    rotation(rotation)
+                    start()
+                }
+            else
+                iv.rotation = rotation
+        }
+    }
+
     override val listableManager: SomethingTreeListable.TreeListableManager<Long> by lazy {
-        instanceListableManager(ListableManager.EXT.WITH_DRAGGABLE)
+        instanceListableManager()
     }
 
     private val onExpandClick = object : TreeAble.OnClick {
         override fun <K> onClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int) {
-            listableManager.expand(position)
-            if(listableManager.isExpanded(position)) {
-                toast("展开")
-            } else {
-                toast("收起")
-            }
+            listableManager.expand(position, payload = listOf(99, !listableManager.isExpanded(position)))
         }
     }
 
     private val onExpandLongClick = object : TreeAble.OnLongClick {
         override fun <K> onLongClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int): Boolean {
-            listableManager.expand(position)
-            if(listableManager.isExpanded(position)) {
+            if (listableManager.expand(position, payload = listOf(99, !listableManager.isExpanded(position)))) {
                 toast("展开")
             } else {
                 toast("收起")
@@ -103,6 +114,19 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
         override fun <K> convert(helper: ViewHelper<K>) {
             helper.hSetText(R.id.tv_tree_root, title)
         }
+
+        override fun <K> convert(helper: ViewHelper<K>, payloads: List<Any>) {
+            @Suppress("UNCHECKED_CAST")
+            if (payloads.isNotEmpty() && payloads[0] is List<*>) {
+                val cmd = payloads[0] as List<Any>
+                when (cmd[0]) {
+                    99 -> {
+                        val isExpend = (cmd[1] as Boolean)
+                        rotationImageView(helper.hGetView(R.id.iv_spin), if (isExpend) 0f else -90f)
+                    }
+                }
+            }
+        }
     }
 
     private class ChildNode(private val title: String, onLongClick: TreeAble.OnLongClick, ch: MutableList<TreeAble>?) : BaseTree(ch) {
@@ -136,6 +160,19 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
 
         override fun <K> convert(helper: ViewHelper<K>) {
             helper.hSetText(R.id.tv_tree_child, title)
+        }
+
+        override fun <K> convert(helper: ViewHelper<K>, payloads: List<Any>) {
+            @Suppress("UNCHECKED_CAST")
+            if (payloads.isNotEmpty() && payloads[0] is List<*>) {
+                val cmd = payloads[0] as List<Any>
+                when (cmd[0]) {
+                    99 -> {
+                        val isExpend = (cmd[1] as Boolean)
+                        rotationImageView(helper.hGetView(R.id.iv_spin), if (isExpend) 0f else -90f)
+                    }
+                }
+            }
         }
     }
 
@@ -242,7 +279,7 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
                 }
             })
             setItemDragFlags(ItemTouchHelper.DOWN or ItemTouchHelper.UP)
-            setItemSwipeListener(object: OnItemSwipeListener {
+            setItemSwipeListener(object : OnItemSwipeListener {
                 override fun onItemSwipeStart(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
                     println("swipe start from $pos")
                 }
