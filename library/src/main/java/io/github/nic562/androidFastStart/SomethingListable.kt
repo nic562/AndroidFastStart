@@ -14,7 +14,6 @@ import io.github.nic562.androidFastStart.viewholder.ViewHolder
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
 import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.warn
 import java.lang.RuntimeException
 
 /**
@@ -44,6 +43,28 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
     fun listableItemConvert(helper: ViewHelper<K>, item: T)
 
+    /**
+     * 局部刷新所用的方法
+     *
+     * selectionTracker 的事件触发调用了RecyclerView.Adapter.onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>)
+     *
+     * 进而调用 RecyclerView.convert(holder: VH, item: T, payloads: List<Any>) 但该
+     *
+     * 父类该方法的实现为空，造成selectionTracker 触发后UI上无更新。
+     *
+     * 这里为了简单使用，直接调用整体更新的方法。当然可会造成性能的牺牲。
+     *
+     * 若对性能有要求，请手动重载该方法。
+     *
+     * @param payloads 如果是 selectionTracker 触发的，会相应到一个 `Selection-Changed` 的字符串
+     * @see ListableManager.notifyItemChanged#payload
+     */
+    fun listableItemConvert(helper: ViewHelper<K>, item: T, payloads: List<Any>) {
+        if (payloads.isNotEmpty() && payloads[0] == "Selection-Changed") {
+            listableItemConvert(helper, item)
+        }
+    }
+
     override fun instanceListableManager(vararg args: Any): DataListableManager<T, K> {
         if (!(args.isNotEmpty() && args[0] is Int)) {
             throw RuntimeException("The first arg means the [List Item Layout ID], it must be an Int.")
@@ -65,6 +86,10 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
             override fun itemConvert(helper: ViewHelper<K>, item: T) {
                 listableItemConvert(helper, item)
+            }
+
+            override fun itemConvert(helper: ViewHelper<K>, item: T, payloads: List<Any>) {
+                listableItemConvert(helper, item, payloads)
             }
 
             override fun loadData(page: Int, limit: Int, dataCallback: OnLoadDataCallback<T>) {
@@ -98,25 +123,6 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
          * 目前该 ItemDetails 只在 SelectionTracker 中用到，所以并不会对其他组件造成影响。
          */
         abstract fun bindItemDetails(holder: ViewHolder<K>, position: Int)
-
-        /**
-         * 局部刷新所用的方法
-         *
-         * 使用 selectionTracker 时 必须重写该方法
-         *
-         * selectionTracker 的事件触发调用了onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>)
-         *
-         * 父类实现并没有实现该方法，造成selectionTracker 触发后UI上无更新
-         *
-         * @param payloads 如果是 selectionTracker 触发的，会相应到一个 `Selection-Changed` 的字符串
-         * 官方RecyclerView.Adapter 源码中的
-         * onBindViewHolder(holder: VH, position: Int, payloads: MutableList<Any>) 也直接忽略了 payloads参数而，所以本实现也依照该方式。
-         * 这可能需要 或者针对不同的事件做不同响应，暂时无法预料，先留坑。
-         */
-        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
-            warn("onBindViewHolder with playLoads ::: $payloads ${payloads[0].javaClass}")
-            convert(helper, item)
-        }
     }
 
     private abstract class AdapterWithDraggableAndUpFetch<T, K>(layoutID: Int, list: MutableList<T>) : Adapter<T, K>(layoutID, list), UpFetchModule, DraggableModule
@@ -146,9 +152,11 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                 ListableManager.EXT.WITH_DRAGGABLE_AND_UP_FETCH -> {
                     object : AdapterWithDraggableAndUpFetch<T, K>(listItemLayoutID, dataList) {
                         override fun convert(helper: ViewHolder<K>, item: T) {
-                            if (item != null) {
-                                itemConvert(helper, item)
-                            }
+                            itemConvert(helper, item)
+                        }
+
+                        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
+                            itemConvert(helper, item, payloads)
                         }
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
@@ -159,9 +167,11 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                 ListableManager.EXT.WITH_DRAGGABLE -> {
                     object : AdapterWithDraggable<T, K>(listItemLayoutID, dataList) {
                         override fun convert(helper: ViewHolder<K>, item: T) {
-                            if (item != null) {
-                                itemConvert(helper, item)
-                            }
+                            itemConvert(helper, item)
+                        }
+
+                        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
+                            itemConvert(helper, item, payloads)
                         }
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
@@ -172,9 +182,11 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                 ListableManager.EXT.WITH_UP_FETCH -> {
                     object : AdapterWithUpFetch<T, K>(listItemLayoutID, dataList) {
                         override fun convert(helper: ViewHolder<K>, item: T) {
-                            if (item != null) {
-                                itemConvert(helper, item)
-                            }
+                            itemConvert(helper, item)
+                        }
+
+                        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
+                            itemConvert(helper, item, payloads)
                         }
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
@@ -185,9 +197,11 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                 ListableManager.EXT.NORMAL -> {
                     object : Adapter<T, K>(listItemLayoutID, dataList) {
                         override fun convert(helper: ViewHolder<K>, item: T) {
-                            if (item != null) {
-                                itemConvert(helper, item)
-                            }
+                            itemConvert(helper, item)
+                        }
+
+                        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
+                            itemConvert(helper, item, payloads)
                         }
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
@@ -216,6 +230,8 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
         }
 
         abstract fun itemConvert(helper: ViewHelper<K>, item: T)
+
+        abstract fun itemConvert(helper: ViewHelper<K>, item: T, payloads: List<Any>)
 
         abstract fun loadData(page: Int, limit: Int,
                               dataCallback: OnLoadDataCallback<T>)

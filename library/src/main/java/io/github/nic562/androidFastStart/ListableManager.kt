@@ -4,6 +4,7 @@ import android.view.View
 import android.widget.LinearLayout
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
+import androidx.annotation.Nullable
 import androidx.recyclerview.selection.ItemKeyProvider
 import androidx.recyclerview.selection.SelectionTracker
 import androidx.recyclerview.selection.StorageStrategy
@@ -79,6 +80,13 @@ interface ListableManager<K> {
     fun reloadData()
 
     fun notifyDataSetChanged()
+
+    /**
+     * 通知局部更新事件。
+     *
+     * @param ignoredHeaderLayout 默认为 true，表示 响应更新事件的数据所在 position 不从头部元素开始计算。这个在头部元素为数据列表之外其他View的时候需要注意。
+     */
+    fun notifyItemChanged(position: Int, @Nullable payload: Any, ignoredHeaderLayout: Boolean = true)
 
     fun removeData(position: Int)
 

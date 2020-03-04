@@ -8,6 +8,8 @@ import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
+import android.widget.TextView
 import androidx.appcompat.view.ActionMode
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.selection.ItemKeyProvider
@@ -23,6 +25,7 @@ import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 import kotlinx.android.synthetic.main.activity_card.*
 import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
+import java.lang.StringBuilder
 import kotlin.random.Random
 
 /**
@@ -57,13 +60,39 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
         helper.apply {
             hSetText(R.id.tv_title, item)
             hSetText(R.id.tv_subtitle, item)
-            val c = hGetView<MaterialCardView>(R.id.card)
-            val details = helper.getItemDetails()
+            updateSelection(helper)
+        }
+    }
+
+    private fun updateSelection(helper: ViewHelper<Long>) {
+        helper.apply {
+            val details = getItemDetails()
             val selectionTracker = listableManager.getSelectionTracker()
+            val c = hGetView<MaterialCardView>(R.id.card)
             if (details != null && selectionTracker != null) {
                 c.isChecked = selectionTracker.isSelected(details.selectionKey)
             } else {
                 c.isChecked = false
+            }
+        }
+    }
+
+    /**
+     * 演示局部更新，只有当payloads 有效时才执行对应的更新
+     */
+    override fun listableItemConvert(helper: ViewHelper<Long>, item: String, payloads: List<Any>) {
+        println("payload update convert: $item # $payloads")
+        if (payloads.isNotEmpty()) {
+            when (payloads[0]) {
+                "Selection-Changed" -> {
+                    updateSelection(helper)
+                }
+                "test" -> {
+                    val t = StringBuilder()
+                    t.append(helper.hGetView<TextView>(R.id.tv_subtitle).text)
+                    t.append("\n test.")
+                    helper.hSetText(R.id.tv_subtitle, t.toString())
+                }
             }
         }
     }
@@ -146,7 +175,7 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                 }
             })
             setItemDragFlags(ItemTouchHelper.DOWN)
-            setItemSwipeListener(object: OnItemSwipeListener {
+            setItemSwipeListener(object : OnItemSwipeListener {
                 override fun onItemSwipeStart(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
                     println("swipe start from $pos")
                 }
@@ -188,6 +217,13 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
             }
             setItemDragEnable(false) // 先禁止拖拽模式，启用 selectionTracker 模式
             setItemSwipeEnable(false)
+            addChildClickViewIds(R.id.btn_test)
+            setItemChildClickListener(object : OnItemChildClickListener {
+                override fun onItemChildClick(view: View, position: Int) {
+                    println("Click Item child >>>> $position")
+                    notifyItemChanged(position, "test")
+                }
+            })
         }
     }
 
@@ -210,7 +246,7 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when(item.itemId) {
+        return when (item.itemId) {
             R.id.action_drag -> {
                 listableManager.apply {
                     setSelectionTrackerEnable(!getSelectionTrackerEnable())

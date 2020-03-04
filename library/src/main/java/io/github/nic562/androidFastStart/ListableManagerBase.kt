@@ -59,7 +59,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
                 if (currPage * mLimit >= mTotalCount) {
                     loadMoreEnd()
                 } else {
-                    myLoadData(currPage+1, mLimit)
+                    myLoadData(currPage + 1, mLimit)
                 }
             }
         }
@@ -113,7 +113,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     override fun reloadData() {
         clearData()
-        myLoadData(currPage+1, mLimit)
+        myLoadData(currPage + 1, mLimit)
     }
 
     override fun getSelectionTrackerEnable(): Boolean {
@@ -176,6 +176,11 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     override fun notifyDataSetChanged() {
         adapter.notifyDataSetChanged()
+    }
+
+    override fun notifyItemChanged(position: Int, payload: Any, ignoredHeaderLayout: Boolean) {
+        val fix = if (ignoredHeaderLayout && hasHeaderLayout()) 1 else 0
+        adapter.notifyItemChanged(position + fix, payload)
     }
 
     override fun removeData(position: Int) {
@@ -400,7 +405,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
                     listener.onItemSwipeMoving(canvas, viewHolder, dX, dY, isCurrentlyActive)
                 }
             })
-            if(isSwipeEnabled)
+            if (isSwipeEnabled)
                 itemTouchHelperCallback.setSwipeMoveFlags(swipeFlag)
         }
     }
