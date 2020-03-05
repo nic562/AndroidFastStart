@@ -13,14 +13,14 @@
         android:textSize="10sp" />
 
     <Button
-        android:id="@+id/btn_test"
+        android:id="@+id/btn_up"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="test" />
+        android:text="up" />
 
     <Button
-        android:id="@+id/btn_test1"
+        android:id="@+id/btn_down"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="test1" />
+        android:text="down" />
 </LinearLayout>

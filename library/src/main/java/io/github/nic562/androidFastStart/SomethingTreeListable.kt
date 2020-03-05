@@ -32,7 +32,7 @@ import org.jetbrains.anko.AnkoLogger
  */
 interface SomethingTreeListable<K> : SomethingListableBase<K> {
 
-    interface TreeListableManager<K>: ListableManager<K> {
+    interface TreeListableManager<K> : ListableManager<K> {
         /**
          * 展开或收起节点
          * @param position 需要收起或展开的节点所在位置。使用使用动画
@@ -48,6 +48,10 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
          *  @return 展开时为 true，收起时为 false
          */
         fun isExpanded(@IntRange(from = 0) position: Int): Boolean
+
+        fun addData(t: TreeAble, position: Int? = null)
+        fun replaceData(t: TreeAble, position: Int)
+        fun getData(position: Int): TreeAble?
     }
 
     interface OnLoadDataCallback {
@@ -153,9 +157,9 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
         abstract fun bindItemDetails(holder: BaseViewHolder, position: Int)
     }
 
-    private abstract class AdapterWithDraggableAndUpFetch<K>: Adapter<K>(), UpFetchModule, DraggableModule
-    private abstract class AdapterWithDraggable<K>: Adapter<K>(), DraggableModule
-    private abstract class AdapterWithUpFetch<K>: Adapter<K>(), UpFetchModule
+    private abstract class AdapterWithDraggableAndUpFetch<K> : Adapter<K>(), UpFetchModule, DraggableModule
+    private abstract class AdapterWithDraggable<K> : Adapter<K>(), DraggableModule
+    private abstract class AdapterWithUpFetch<K> : Adapter<K>(), UpFetchModule
 
     private abstract class MyListableManager<K>(ext: ListableManager.EXT) : ListableManagerBase<BaseNode, K, BaseViewHolder>(), TreeListableManager<K> {
 
@@ -184,23 +188,23 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
         }
 
         override val adapter: BaseQuickAdapter<BaseNode, BaseViewHolder> by lazy {
-            val a = when(ext) {
+            val a = when (ext) {
                 ListableManager.EXT.WITH_DRAGGABLE_AND_UP_FETCH -> {
-                    object : AdapterWithDraggableAndUpFetch<K> () {
+                    object : AdapterWithDraggableAndUpFetch<K>() {
                         override fun bindItemDetails(holder: BaseViewHolder, position: Int) {
                             mBindItemDetails(holder, position)
                         }
                     }
                 }
                 ListableManager.EXT.WITH_DRAGGABLE -> {
-                    object : AdapterWithDraggable<K> () {
+                    object : AdapterWithDraggable<K>() {
                         override fun bindItemDetails(holder: BaseViewHolder, position: Int) {
                             mBindItemDetails(holder, position)
                         }
                     }
                 }
                 ListableManager.EXT.WITH_UP_FETCH -> {
-                    object : AdapterWithUpFetch<K> () {
+                    object : AdapterWithUpFetch<K>() {
                         override fun bindItemDetails(holder: BaseViewHolder, position: Int) {
                             mBindItemDetails(holder, position)
                         }
@@ -219,6 +223,29 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
             }
         }
 
+        override fun getData(position: Int): TreeAble? {
+            val d = adapter.getItemOrNull(position) ?: return null
+            if (d is MyNode) {
+                return d.treeNode
+            }
+            return null
+        }
+
+        override fun addData(t: TreeAble, position: Int?) {
+            findAllNodeProvider(t)
+            val n = tree2Node(t)
+            if (position == null)
+                adapter.addData(n)
+            else
+                adapter.addData(position, n)
+        }
+
+        override fun replaceData(t: TreeAble, position: Int) {
+            findAllNodeProvider(t)
+            val n = tree2Node(t)
+            adapter.data[position] = n
+        }
+
         @Suppress("UNCHECKED_CAST")
         override fun expand(position: Int, notifyDataChange: Boolean, animate: Boolean, payload: Any?): Boolean {
             (adapter as Adapter<K>).expandOrCollapse(position, animate, notifyDataChange, payload)
@@ -234,17 +261,21 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
             return false
         }
 
+        private fun tree2Node(t: TreeAble): BaseNode {
+            return if (t.expandable) {
+                ExpandNode(t)
+            } else {
+                Node(t)
+            }
+        }
+
         private val onLoadDataCallback = object : OnLoadDataCallback {
             override fun onLoadData(data: Collection<TreeAble>, totalCount: Int) {
                 this@MyListableManager.mTotalCount = totalCount
                 if (data.isNotEmpty()) {
                     for (x in data) {
                         findAllNodeProvider(x)
-                        if (x.expandable) {
-                            adapter.addData(ExpandNode(x))
-                        } else {
-                            adapter.addData(Node(x))
-                        }
+                        adapter.addData(tree2Node(x))
                     }
                     increasePage()
                 }

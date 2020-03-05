@@ -8,9 +8,12 @@ import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.animation.DecelerateInterpolator
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.annotation.LayoutRes
+import androidx.core.animation.doOnEnd
+import androidx.core.animation.doOnStart
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -176,34 +179,49 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
         }
     }
 
-    private class ChildNode1(private val title: String) : BaseTree() {
+    private class ChildNode1(private val title: String, childClick: TreeAble.OnChildClick) : BaseTree() {
         companion object {
-            val ClickableChildIds = intArrayOf(R.id.btn_test)
-            val LongClickableChildIds = intArrayOf(R.id.btn_test1)
-            val OnChildClick = object : TreeAble.OnChildClick {
-                override fun <K> onChildClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int) {
-                    val d = data as ChildNode1
-                    Toast.makeText(view.context, "${d.title} child click", Toast.LENGTH_SHORT).show()
-                }
-            }
-            val OnChildLongClick = object : TreeAble.OnChildLongClick {
-                override fun <K> onChildLongClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int): Boolean {
-                    val d = data as ChildNode1
-                    Toast.makeText(view.context, "${d.title} child long click", Toast.LENGTH_SHORT).show()
-                    return true
-                }
-            }
+            val ClickableChildIds = intArrayOf(R.id.btn_up, R.id.btn_down)
         }
 
         override val tree: Int = 4
         override val layoutResID: Int = R.layout.layout_tree_child1
         override val childClickViewIds: IntArray? = ClickableChildIds
-        override val onChildClick: TreeAble.OnChildClick? = OnChildClick
-        override val childLongClickViewIds: IntArray? = LongClickableChildIds
-        override val onChildLongClick: TreeAble.OnChildLongClick? = OnChildLongClick
+        override val onChildClick: TreeAble.OnChildClick? = childClick
 
         override fun <K> convert(helper: ViewHelper<K>) {
             helper.hSetText(R.id.tv_tree_child, title)
+        }
+
+        override fun <K> convert(helper: ViewHelper<K>, payloads: List<Any>) {
+            ValueAnimator.ofFloat(1f, 0.1f).apply {
+                val v = helper.hGetView<View>(R.id.tv_tree_child)
+                addUpdateListener {
+                    v.alpha = it.animatedValue as Float
+                }
+                doOnStart {
+                    helper.hGetView<Button>(R.id.btn_up).isEnabled = false
+                    helper.hGetView<Button>(R.id.btn_down).isEnabled = false
+                }
+                doOnEnd {
+                    ValueAnimator.ofFloat(0.1f, 1f).apply {
+                        addUpdateListener {
+                            v.alpha = it.animatedValue as Float
+                        }
+                        doOnStart {
+                            convert(helper)
+                        }
+                        doOnEnd {
+                            helper.hGetView<Button>(R.id.btn_up).isEnabled = true
+                            helper.hGetView<Button>(R.id.btn_down).isEnabled = true
+                        }
+                        duration = 500
+                        start()
+                    }
+                }
+                duration = 500
+                start()
+            }
         }
     }
 
@@ -217,11 +235,33 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
             for (j in 0 until 3) {
                 val gh = arrayListOf<TreeAble>()
                 for (k in 0 until 5) {
-                    gh.add(ChildNode1("Grandchild: $page - $i $j $k"))
+                    gh.add(ChildNode1("Grandchild: $page - $i>$j>$k", object : TreeAble.OnChildClick {
+                        override fun <K> onChildClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int) {
+                            when (view.id) {
+                                R.id.btn_up -> {
+                                    val d0 = listableManager.getData(position - 1) ?: return
+                                    val d1 = data
+                                    listableManager.replaceData(d1, position - 1)
+                                    listableManager.replaceData(d0, position)
+                                    listableManager.notifyItemChanged(position, "replace")
+                                    listableManager.notifyItemChanged(position - 1, "replace")
+                                }
+                                R.id.btn_down -> {
+                                    val d0 = listableManager.getData(position + 1) ?: return
+                                    val d1 = data
+                                    listableManager.replaceData(d1, position + 1)
+                                    listableManager.replaceData(d0, position)
+                                    listableManager.notifyItemChanged(position, "replace")
+                                    listableManager.notifyItemChanged(position + 1, "replace")
+                                }
+                            }
+
+                        }
+                    }))
                 }
-                ch.add(ChildNode("Child: $page - $i $j", onExpandLongClick, gh))
+                ch.add(ChildNode("Child: $page - $i>$j", onExpandLongClick, gh))
             }
-            data.add(RootNode("root: $page $i", onExpandClick, ch))
+            data.add(RootNode("root: $page - $i", onExpandClick, ch))
         }
 
         dataCallback.onLoadData(data, 20)
