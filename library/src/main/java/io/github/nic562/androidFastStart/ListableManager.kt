@@ -142,7 +142,7 @@ interface ListableManager<K> {
 
     fun addChildClickViewIds(@IdRes vararg viewIds: Int)
 
-    fun getChildLongClickViewIds(): LinkedHashSet<Int>
+    fun addChildLongClickViewIds(@IdRes vararg viewIds: Int)
 
     fun setAnimationEnable(boolean: Boolean)
 

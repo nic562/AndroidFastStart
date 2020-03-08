@@ -418,8 +418,8 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
         adapter.addChildClickViewIds(*viewIds)
     }
 
-    override fun getChildLongClickViewIds(): LinkedHashSet<Int> {
-        return adapter.getChildLongClickViewIds()
+    override fun addChildLongClickViewIds(@IdRes vararg viewIds: Int) {
+        adapter.addChildLongClickViewIds(*viewIds)
     }
 
     override fun setAnimationEnable(boolean: Boolean) {
