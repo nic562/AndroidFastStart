@@ -264,7 +264,7 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
             data.add(RootNode("root: $page - $i", onExpandClick, ch))
         }
 
-        dataCallback.onLoadData(data, 20)
+        dataCallback.onLoadData(data, 20, page)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

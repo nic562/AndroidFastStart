@@ -55,7 +55,7 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
     }
 
     interface OnLoadDataCallback {
-        fun onLoadData(data: Collection<TreeAble>, totalCount: Int)
+        fun onLoadData(data: Collection<TreeAble>, totalCount: Int, page: Int)
         fun onError()
     }
 
@@ -270,14 +270,14 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
         }
 
         private val onLoadDataCallback = object : OnLoadDataCallback {
-            override fun onLoadData(data: Collection<TreeAble>, totalCount: Int) {
+            override fun onLoadData(data: Collection<TreeAble>, totalCount: Int, page: Int) {
                 this@MyListableManager.mTotalCount = totalCount
                 if (data.isNotEmpty()) {
                     for (x in data) {
                         findAllNodeProvider(x)
                         adapter.addData(tree2Node(x))
                     }
-                    increasePage()
+                    setPage(page)
                 }
                 adapter.loadMoreModule?.loadMoreComplete()
             }

@@ -53,7 +53,7 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
         for (i in 1..limit) {
             l.add("$page ${page * limit + i}")
         }
-        dataCallback.onLoadData(l, 50)
+        dataCallback.onLoadData(l, 50, page)
     }
 
     override fun listableItemConvert(helper: ViewHelper<Long>, item: String) {

@@ -33,4 +33,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Test Tree" />
+
+    <Button
+        android:id="@+id/btn_page"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Test page" />
 </LinearLayout>

@@ -35,5 +35,8 @@
         <activity
             android:name=".ActivityTree"
             android:theme="@style/MaterialTheme" />
+
+        <activity android:name=".ActivityPage"
+            android:theme="@style/MaterialTheme" />
     </application>
 </manifest>

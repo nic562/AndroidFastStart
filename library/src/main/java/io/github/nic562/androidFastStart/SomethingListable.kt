@@ -34,7 +34,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
     interface DataListableManager<T, K> : ListableManager<K>
 
     interface OnLoadDataCallback<T> {
-        fun onLoadData(data: Collection<T>, totalCount: Int)
+        fun onLoadData(data: Collection<T>, totalCount: Int, page: Int)
         fun onError()
     }
 
@@ -214,12 +214,12 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
         }
 
         private val onLoadDataCallback = object : OnLoadDataCallback<T> {
-            override fun onLoadData(data: Collection<T>, totalCount: Int) {
+            override fun onLoadData(data: Collection<T>, totalCount: Int, page: Int) {
                 this@NormalListableManager.mTotalCount = totalCount
                 if (data.isNotEmpty()) {
                     adapter.data.addAll(data)
                     adapter.notifyDataSetChanged()
-                    increasePage()
+                    setPage(page)
                 }
                 adapter.loadMoreModule?.loadMoreComplete()
             }

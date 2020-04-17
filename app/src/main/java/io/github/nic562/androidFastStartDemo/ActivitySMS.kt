@@ -67,7 +67,7 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
                 }
                 smsList.add(sms)
             }
-            dataCallback.onLoadData(smsList, totalCount)
+            dataCallback.onLoadData(smsList, totalCount, page)
 
         } catch (e: Exception) {
             e.printStackTrace()

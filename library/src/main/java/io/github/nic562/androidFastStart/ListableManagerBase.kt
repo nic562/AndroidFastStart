@@ -50,6 +50,8 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     protected abstract val adapter: BaseQuickAdapter<T, VH>
 
+    protected abstract fun myLoadData(page: Int, limit: Int)
+
     protected fun setLoadMoreModule(loadMoreModule: BaseLoadMoreModule?) {
         loadMoreModule?.apply {
             isEnableLoadMore = mCanLoadMore
@@ -59,6 +61,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
                 if (currPage * mLimit >= mTotalCount) {
                     loadMoreEnd()
                 } else {
+                    // 加载下一页
                     myLoadData(currPage + 1, mLimit)
                 }
             }
@@ -77,8 +80,8 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
         return currPage
     }
 
-    override fun increasePage(): Int {
-        return ++currPage
+    protected fun setPage(page: Int) {
+        currPage = page
     }
 
     override fun getTotalCount(): Int {
@@ -114,6 +117,10 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
     override fun reloadData() {
         clearData()
         myLoadData(currPage + 1, mLimit)
+    }
+
+    override fun loadData(page: Int) {
+        myLoadData(page, mLimit)
     }
 
     override fun getSelectionTrackerEnable(): Boolean {

@@ -36,8 +36,12 @@ interface ListableManager<K> {
         WITH_UP_FETCH, WITH_DRAGGABLE, WITH_DRAGGABLE_AND_UP_FETCH, NORMAL
     }
 
+    /**
+     * 获取当前页码
+     * 不允许直接 setPage 是由于防止在加载失败时的页码与当前数据不对应。
+     * 后续接口的实现，在加载数据成功时才能修改页码
+     */
     fun getPage(): Int
-    fun increasePage(): Int
 
     fun getTotalCount(): Int
 
@@ -73,11 +77,20 @@ interface ListableManager<K> {
 
     fun setViewContainer(recyclerView: RecyclerView)
 
-    fun myLoadData(page: Int, limit: Int)
-
+    /**
+     * 清理数据
+     */
     fun clearData()
 
+    /**
+     * 重新加载数据
+     */
     fun reloadData()
+
+    /**
+     * 加载指定页数据，加载成功则修改当前页码
+     */
+    fun loadData(page: Int)
 
     fun notifyDataSetChanged()
 

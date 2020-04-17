@@ -34,6 +34,10 @@ class ActivityMain : ActivityBaseWithInitPermission() {
         btn_Tree.setOnClickListener {
             startActivity(intentFor<ActivityTree>())
         }
+
+        btn_page.setOnClickListener {
+            startActivity(intentFor<ActivityPage>())
+        }
     }
 
     override val initPermissionsRunnable = object: RunnableWithPermissions {
