@@ -10,6 +10,7 @@ import io.github.nic562.androidFastStart.viewholder.ItemDetails
  * Created by Nic on 2019/12/25.
  */
 interface ViewHelper<K> {
+    fun hGetItemView(): View
     fun <T : View> hGetView(@IdRes viewId: Int): T
     fun hSetText(@IdRes viewId: Int, value: CharSequence?): ViewHelper<K>
     fun hSetText(@IdRes viewId: Int, @StringRes strId: Int): ViewHelper<K>

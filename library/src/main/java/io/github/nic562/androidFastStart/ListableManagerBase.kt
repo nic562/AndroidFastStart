@@ -192,7 +192,6 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     override fun removeData(position: Int) {
         adapter.remove(position)
-        adapter.notifyDataSetChanged()
     }
 
     override fun setEmptyView(@LayoutRes resID: Int) {

@@ -217,11 +217,19 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
             }
             setItemDragEnable(false) // 先禁止拖拽模式，启用 selectionTracker 模式
             setItemSwipeEnable(false)
-            addChildClickViewIds(R.id.btn_test)
+            addChildClickViewIds(R.id.btn_test, R.id.btn_del)
             setItemChildClickListener(object : OnItemChildClickListener {
                 override fun onItemChildClick(view: View, position: Int) {
-                    println("Click Item child >>>> $position")
-                    notifyItemChanged(position, "test")
+                    when(view.id) {
+                        R.id.btn_test -> {
+                            println("Click Item child >>>> $position")
+                            notifyItemChanged(position, "test")
+                        }
+                        R.id.btn_del -> {
+                            println("Click Delete Item child >>>> $position")
+                            listableManager.removeData(position)
+                        }
+                    }
                 }
             })
         }

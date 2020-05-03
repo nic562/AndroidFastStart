@@ -14,6 +14,9 @@ import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 internal class ViewHolder<K>(view: View) : BaseViewHolder(view), ViewHelper<K> {
     private var itemDetails: ItemDetails<K>? = null
     var itemDetailsProvider: ItemDetailsProvider<K>? = null
+    override fun hGetItemView(): View {
+        return itemView
+    }
 
     override fun getItemDetails(): ItemDetails<K>? {
         if (itemDetails == null) {
