@@ -31,7 +31,9 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
     /**
      * 暂定义，为后续根据该类功能单独扩展接口而预留
      */
-    interface DataListableManager<T, K> : ListableManager<K>
+    interface DataListableManager<T, K> : ListableManager<K> {
+        fun getPosition(item: T): Int
+    }
 
     interface OnLoadDataCallback<T> {
         fun onLoadData(data: Collection<T>, totalCount: Int, page: Int)
@@ -129,7 +131,11 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
     private abstract class AdapterWithDraggable<T, K>(layoutID: Int, list: MutableList<T>) : Adapter<T, K>(layoutID, list), DraggableModule
     private abstract class AdapterWithUpFetch<T, K>(layoutID: Int, list: MutableList<T>) : Adapter<T, K>(layoutID, list), UpFetchModule
 
-    private abstract class NormalListableManager<T, K>(listItemLayoutID: Int, dataList: MutableList<T>, ext: ListableManager.EXT) : ListableManagerBase<T, K, ViewHolder<K>>(), DataListableManager<T, K> {
+    private abstract class NormalListableManager<T, K>(listItemLayoutID: Int, val dataList: MutableList<T>, ext: ListableManager.EXT) : ListableManagerBase<T, K, ViewHolder<K>>(), DataListableManager<T, K> {
+
+        override fun getPosition(item: T): Int {
+            return dataList.indexOf(item)
+        }
 
         private fun mBindItemDetails(holder: ViewHolder<K>, position: Int) {
             if (holder.itemDetailsProvider == null) {
