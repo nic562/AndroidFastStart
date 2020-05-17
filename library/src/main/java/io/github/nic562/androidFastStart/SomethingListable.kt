@@ -33,6 +33,8 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
      */
     interface DataListableManager<T, K> : ListableManager<K> {
         fun getPosition(item: T): Int
+        fun getData(position: Int): T
+        fun removeItem(item: T)
     }
 
     interface OnLoadDataCallback<T> {
@@ -135,6 +137,14 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
         override fun getPosition(item: T): Int {
             return dataList.indexOf(item)
+        }
+
+        override fun getData(position: Int): T {
+            return dataList[position]
+        }
+
+        override fun removeItem(item: T) {
+            adapter.remove(item)
         }
 
         private fun mBindItemDetails(holder: ViewHolder<K>, position: Int) {

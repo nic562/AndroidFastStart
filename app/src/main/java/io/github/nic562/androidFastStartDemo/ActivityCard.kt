@@ -232,6 +232,20 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                     }
                 }
             })
+            addChildLongClickViewIds(R.id.btn_del)
+            setItemChildLongClickListener(object : OnItemChildLongClickListener {
+                override fun onItemChildLongClick(view: View, position: Int): Boolean {
+                    when(view.id) {
+                        R.id.btn_del -> {
+                            println("Long Click Delete Item child >> $position")
+                            val d = listableManager.getData(position)
+                            listableManager.removeItem(d)
+                            return true
+                        }
+                    }
+                    return false
+                }
+            })
         }
     }
 
@@ -285,11 +299,12 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                 val fix = if (listableManager.hasHeaderLayout()) -1 else 0
                 for (x in selection) {
                     val p = listableManager.getSelectionKeyProvider()!!.getPosition(x) + fix
-                    delItems.add(dataList[p])
+                    delItems.add(listableManager.getData(p))
                 }
-                dataList.removeAll(delItems)
                 clearSelection()
-                listableManager.notifyDataSetChanged()
+                for (i in delItems) {
+                    listableManager.removeItem(i)
+                }
                 return true
             }
         }

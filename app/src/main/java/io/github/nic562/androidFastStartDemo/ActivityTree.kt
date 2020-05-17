@@ -85,7 +85,7 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
         }
     }
 
-    private class RootNode(private val title: String, onclick: TreeAble.OnClick, ch: MutableList<TreeAble>?) : BaseTree(ch) {
+    private class RootNode(private val title: String, onclick: TreeAble.OnClick, ch: MutableList<TreeAble>?, val listableManager: SomethingTreeListable.TreeListableManager<Long>) : BaseTree(ch) {
         companion object {
             val ClickableChildIds = intArrayOf(R.id.btn_test)
             val LongClickableChildIds = intArrayOf(R.id.btn_test1)
@@ -93,13 +93,6 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
                 override fun <K> onChildClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int) {
                     val d = data as RootNode
                     Toast.makeText(view.context, "${d.title} child click", Toast.LENGTH_SHORT).show()
-                }
-            }
-            val OnChildLongClick = object : TreeAble.OnChildLongClick {
-                override fun <K> onChildLongClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int): Boolean {
-                    val d = data as RootNode
-                    Toast.makeText(view.context, "${d.title} child long click", Toast.LENGTH_SHORT).show()
-                    return true
                 }
             }
         }
@@ -112,7 +105,14 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
         override val childClickViewIds: IntArray? = ClickableChildIds
         override val onChildClick: TreeAble.OnChildClick? = OnChildClick
         override val childLongClickViewIds: IntArray? = LongClickableChildIds
-        override val onChildLongClick: TreeAble.OnChildLongClick? = OnChildLongClick
+        override val onChildLongClick: TreeAble.OnChildLongClick? = object : TreeAble.OnChildLongClick {
+            override fun <K> onChildLongClick(helper: ViewHelper<K>, view: View, data: TreeAble, position: Int): Boolean {
+                val d = data as RootNode
+                Toast.makeText(view.context, "${d.title} child long click", Toast.LENGTH_SHORT).show()
+                listableManager.removeData(position)
+                return true
+            }
+        }
 
         override fun <K> convert(helper: ViewHelper<K>) {
             helper.hSetText(R.id.tv_tree_root, title)
@@ -261,7 +261,7 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
                 }
                 ch.add(ChildNode("Child: $page - $i>$j", onExpandLongClick, gh))
             }
-            data.add(RootNode("root: $page - $i", onExpandClick, ch))
+            data.add(RootNode("root: $page - $i", onExpandClick, ch, listableManager))
         }
 
         dataCallback.onLoadData(data, 20, page)

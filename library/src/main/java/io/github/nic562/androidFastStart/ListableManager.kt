@@ -11,7 +11,6 @@ import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.RecyclerView
 import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
-import java.util.LinkedHashSet
 
 /**
  *
@@ -101,6 +100,9 @@ interface ListableManager<K> {
      */
     fun notifyItemChanged(position: Int, @Nullable payload: Any, ignoredHeaderLayout: Boolean = true)
 
+    /**
+     * 使用时必须要小心，不能按位置循环执行该删除方法，因为每删除一个数据后，position均会改变
+     */
     fun removeData(position: Int)
 
     fun setEmptyView(@LayoutRes resID: Int)
