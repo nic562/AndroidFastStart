@@ -41,15 +41,9 @@ class ActivityCardRaw : ActivityBase(), ActionMode.Callback {
             }
         }
 
-        val title1: TextView
-        val title2: TextView
-        val cardView: MaterialCardView
-
-        init {
-            title1 = v.findViewById(R.id.tv_title)
-            title2 = v.findViewById(R.id.tv_subtitle)
-            cardView = v.findViewById(R.id.card)
-        }
+        val title1: TextView = v.findViewById(R.id.tv_title)
+        val title2: TextView = v.findViewById(R.id.tv_subtitle)
+        val cardView: MaterialCardView = v.findViewById(R.id.card)
     }
 
     private val adapter = object : RecyclerView.Adapter<MyViewHolder>() {
@@ -91,7 +85,7 @@ class ActivityCardRaw : ActivityBase(), ActionMode.Callback {
         rv_cards.adapter = adapter
         rv_cards.layoutManager = LinearLayoutManager(this)
 
-        selectionTracker = SelectionTracker.Builder<Long>(
+        selectionTracker = SelectionTracker.Builder(
                 "my_selection",
                 rv_cards,
                 selectionKeyProvider,
@@ -107,7 +101,7 @@ class ActivityCardRaw : ActivityBase(), ActionMode.Callback {
                     }
                 },
                 StorageStrategy.createLongStorage()
-        ).withSelectionPredicate(SelectionPredicates.createSelectAnything<Long>()).build()
+        ).withSelectionPredicate(SelectionPredicates.createSelectAnything()).build()
 
         selectionTracker?.addObserver(object : SelectionTracker.SelectionObserver<Long>() {
             override fun onSelectionChanged() {

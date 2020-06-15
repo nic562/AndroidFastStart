@@ -44,7 +44,7 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
     }
 
     override val listableManager: SomethingTreeListable.TreeListableManager<Long> by lazy {
-        instanceListableManager()
+        instanceListableManager(ListableManager.EXT.WITH_DRAGGABLE)
     }
 
     private val onExpandClick = object : TreeAble.OnClick {

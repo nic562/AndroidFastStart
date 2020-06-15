@@ -1,14 +1,18 @@
 package io.github.nic562.androidFastStartDemo
 
+import android.animation.Animator
+import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import android.widget.TextView
 import androidx.appcompat.view.ActionMode
 import androidx.core.content.ContextCompat
@@ -26,6 +30,7 @@ import kotlinx.android.synthetic.main.activity_card.*
 import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.lang.StringBuilder
+import kotlin.math.abs
 import kotlin.random.Random
 
 /**
@@ -121,7 +126,21 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
         }
 
         listableManager.apply {
-            setAnimationEnable(true)
+            setAnimationEnable(true, object : ListableManager.ItemLoadAnimators {
+                override fun animators(v: View): Array<Animator> {
+                    val sY = ObjectAnimator.ofFloat(v, "scaleY", 1.3f, 1f).apply {
+                        duration = 350
+                        interpolator = DecelerateInterpolator()
+                    }
+                    val sX = ObjectAnimator.ofFloat(v, "scaleX", 1.3f, 1f).apply {
+                        duration = 350
+                        interpolator = DecelerateInterpolator()
+                    }
+                    val aa = ObjectAnimator.ofFloat(v, "alpha", 0f, 1f)
+                    return arrayOf(sY, sX, aa)
+                }
+            })
+            setAnimationFirstOnly(false)
             setHeaderWithEmptyEnable(true)
             setFooterWithEmptyEnable(true)
             setSelectionStorageStrategy(StorageStrategy.createLongStorage())
@@ -189,8 +208,21 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                 }
 
                 override fun onItemSwipeMoving(canvas: Canvas?, viewHolder: RecyclerView.ViewHolder?, dX: Float, dY: Float, isCurrentlyActive: Boolean) {
-                    println("swipe on $dX x $dY  ($isCurrentlyActive)")
+                    println("swipe on $dX x $dY  ($isCurrentlyActive) ${dX / (canvas?.width ?: 1)}")
                     canvas?.drawColor(ContextCompat.getColor(this@ActivityCard, R.color.colorAccent))
+                    if (isCurrentlyActive) {
+                        val p = Paint().apply {
+                            style = Paint.Style.FILL
+                            color = Color.BLACK
+                            strokeWidth = 12f
+                            textSize = 100f
+                        }
+                        if (abs(dX) / (canvas?.width ?: 1) >= 0.7f) {
+                            canvas?.drawText("loosen to Del", 50f, 200f, p)
+                        } else {
+                            canvas?.drawText("Del", 50f, 200f, p)
+                        }
+                    }
                 }
             })
             setItemSwipeFlags(ItemTouchHelper.START)
@@ -220,7 +252,7 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
             addChildClickViewIds(R.id.btn_test, R.id.btn_del)
             setItemChildClickListener(object : OnItemChildClickListener {
                 override fun onItemChildClick(view: View, position: Int) {
-                    when(view.id) {
+                    when (view.id) {
                         R.id.btn_test -> {
                             println("Click Item child >>>> $position")
                             notifyItemChanged(position, "test")
@@ -235,7 +267,7 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
             addChildLongClickViewIds(R.id.btn_del)
             setItemChildLongClickListener(object : OnItemChildLongClickListener {
                 override fun onItemChildLongClick(view: View, position: Int): Boolean {
-                    when(view.id) {
+                    when (view.id) {
                         R.id.btn_del -> {
                             println("Long Click Delete Item child >> $position")
                             val d = listableManager.getData(position)

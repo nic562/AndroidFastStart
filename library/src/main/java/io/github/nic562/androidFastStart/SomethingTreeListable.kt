@@ -279,11 +279,11 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
                     }
                     setPage(page)
                 }
-                adapter.loadMoreModule?.loadMoreComplete()
+                adapter.loadMoreModule.loadMoreComplete()
             }
 
             override fun onError() {
-                adapter.loadMoreModule?.loadMoreFail()
+                adapter.loadMoreModule.loadMoreFail()
             }
         }
 
@@ -329,13 +329,13 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
                     }
                 }
 
-                override fun convert(helper: BaseViewHolder, data: BaseNode) {
-                    val n = data as MyNode
+                override fun convert(helper: BaseViewHolder, item: BaseNode) {
+                    val n = item as MyNode
                     n.treeNode.convert(exchangeViewHolder(helper))
                 }
 
-                override fun convert(helper: BaseViewHolder, data: BaseNode, payloads: List<Any>) {
-                    val n = data as MyNode
+                override fun convert(helper: BaseViewHolder, item: BaseNode, payloads: List<Any>) {
+                    val n = item as MyNode
                     n.treeNode.convert(exchangeViewHolder(helper), payloads)
                 }
 

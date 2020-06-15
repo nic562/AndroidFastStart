@@ -1,5 +1,6 @@
 package io.github.nic562.androidFastStart
 
+import android.animation.Animator
 import android.view.View
 import android.widget.LinearLayout
 import androidx.annotation.IdRes
@@ -11,6 +12,7 @@ import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.RecyclerView
 import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
+import org.jetbrains.annotations.NotNull
 
 /**
  *
@@ -23,6 +25,10 @@ import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvi
  * Created by Nic on 2020/2/22.
  */
 interface ListableManager<K> {
+
+    interface ItemLoadAnimators {
+        fun animators(@NotNull v: View): Array<Animator>
+    }
 
     /**
      * 额外功能支持
@@ -159,7 +165,8 @@ interface ListableManager<K> {
 
     fun addChildLongClickViewIds(@IdRes vararg viewIds: Int)
 
-    fun setAnimationEnable(boolean: Boolean)
+    fun setAnimationEnable(boolean: Boolean, itemAnimators: ItemLoadAnimators? = null)
+    fun setAnimationFirstOnly(boolean: Boolean)
 
     fun setItemDragFlags(flag: Int)
     fun setItemDragEnable(boolean: Boolean)

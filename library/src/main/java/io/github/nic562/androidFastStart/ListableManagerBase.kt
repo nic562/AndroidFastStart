@@ -1,5 +1,6 @@
 package io.github.nic562.androidFastStart
 
+import android.animation.Animator
 import android.graphics.Canvas
 import android.view.LayoutInflater
 import android.view.View
@@ -12,6 +13,7 @@ import androidx.recyclerview.selection.StorageStrategy
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter.base.BaseQuickAdapter
+import com.chad.library.adapter.base.animation.BaseAnimation
 import com.chad.library.adapter.base.module.BaseLoadMoreModule
 import com.chad.library.adapter.base.viewholder.BaseViewHolder
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
@@ -102,7 +104,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     override fun setCanLoadMore(b: Boolean) {
         this.mCanLoadMore = b
-        adapter.loadMoreModule?.isEnableLoadMore = this.mCanLoadMore
+        adapter.loadMoreModule.isEnableLoadMore = this.mCanLoadMore
     }
 
     override fun getAutoLoadMore(): Boolean {
@@ -111,7 +113,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     override fun setAutoLoadMore(b: Boolean) {
         this.mAutoLoadMore = b
-        adapter.loadMoreModule?.isAutoLoadMore = this.mAutoLoadMore
+        adapter.loadMoreModule.isAutoLoadMore = this.mAutoLoadMore
     }
 
     override fun reloadData() {
@@ -191,7 +193,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
     }
 
     override fun removeData(position: Int) {
-        adapter.remove(position)
+        adapter.removeAt(position)
     }
 
     override fun setEmptyView(@LayoutRes resID: Int) {
@@ -354,13 +356,13 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     override fun setItemDragFlags(flag: Int) {
         this.dragFlag = flag
-        adapter.draggableModule?.apply {
+        adapter.draggableModule.apply {
             itemTouchHelperCallback.setDragMoveFlags(dragFlag)
         }
     }
 
     override fun setItemDragListener(listener: OnItemDragListener?) {
-        adapter.draggableModule?.apply {
+        adapter.draggableModule.apply {
             isDragEnabled = listener != null
             setOnItemDragListener(if (listener == null) null else object : RawOnItemDragListener {
                 override fun onItemDragMoving(source: RecyclerView.ViewHolder?, from: Int, target: RecyclerView.ViewHolder?, to: Int) {
@@ -381,18 +383,18 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
     }
 
     override fun setItemDragEnable(boolean: Boolean) {
-        adapter.draggableModule?.isDragEnabled = boolean
+        adapter.draggableModule.isDragEnabled = boolean
     }
 
     override fun setItemSwipeFlags(flag: Int) {
         this.swipeFlag = flag
-        adapter.draggableModule?.apply {
+        adapter.draggableModule.apply {
             itemTouchHelperCallback.setSwipeMoveFlags(swipeFlag)
         }
     }
 
     override fun setItemSwipeListener(listener: OnItemSwipeListener?) {
-        adapter.draggableModule?.apply {
+        adapter.draggableModule.apply {
             isSwipeEnabled = listener != null
             setOnItemSwipeListener(if (listener == null) null else object : RawOnItemSwipeListener {
                 override fun clearView(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
@@ -417,7 +419,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
     }
 
     override fun setItemSwipeEnable(boolean: Boolean) {
-        adapter.draggableModule?.isSwipeEnabled = boolean
+        adapter.draggableModule.isSwipeEnabled = boolean
     }
 
     override fun addChildClickViewIds(@IdRes vararg viewIds: Int) {
@@ -428,16 +430,27 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
         adapter.addChildLongClickViewIds(*viewIds)
     }
 
-    override fun setAnimationEnable(boolean: Boolean) {
+    override fun setAnimationEnable(boolean: Boolean, itemAnimators: ListableManager.ItemLoadAnimators?) {
         adapter.animationEnable = boolean
+        if (itemAnimators != null) {
+            adapter.adapterAnimation = object : BaseAnimation {
+                override fun animators(view: View): Array<Animator> {
+                    return itemAnimators.animators(view)
+                }
+            }
+        }
+    }
+
+    override fun setAnimationFirstOnly(boolean: Boolean) {
+        adapter.isAnimationFirstOnly = boolean
     }
 
     override fun setUpFetchEnable(boolean: Boolean) {
-        adapter.upFetchModule?.isUpFetchEnable = boolean
+        adapter.upFetchModule.isUpFetchEnable = boolean
     }
 
     override fun setUpFetchListener(listener: OnUpFetchListener?) {
-        adapter.upFetchModule?.apply {
+        adapter.upFetchModule.apply {
             isUpFetchEnable = listener != null
             setOnUpFetchListener(if (listener == null) null else RawOnUpFetchListener {
                 listener.onUpFetch()
@@ -446,6 +459,6 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
     }
 
     override fun setUpFetching(boolean: Boolean) {
-        adapter.upFetchModule?.isUpFetching = boolean
+        adapter.upFetchModule.isUpFetching = boolean
     }
 }
