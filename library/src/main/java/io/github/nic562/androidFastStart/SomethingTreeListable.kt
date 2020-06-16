@@ -340,7 +340,9 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
                 }
 
                 override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder<K> {
-                    return ViewHolder(parent.getItemView(layoutId))
+                    return ViewHolder<K>(parent.getItemView(layoutId)).apply{
+                        treeN.onViewHolderCreated(this, viewType)
+                    }
                 }
 
                 override fun onChildClick(helper: BaseViewHolder, view: View, data: BaseNode, position: Int) {

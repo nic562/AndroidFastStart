@@ -28,6 +28,8 @@ interface TreeAble {
      */
     fun <K> convert(helper: ViewHelper<K>, payloads: List<Any>) {}
 
+    fun <K> onViewHolderCreated(helper: ViewHelper<K>, viewType: Int) {}
+
     val expandable: Boolean
     val footer: TreeAble?
 

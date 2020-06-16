@@ -1,6 +1,7 @@
 package io.github.nic562.androidFastStart
 
 import android.view.View
+import android.view.ViewGroup
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.chad.library.adapter.base.BaseQuickAdapter.Companion.EMPTY_VIEW
 import com.chad.library.adapter.base.BaseQuickAdapter.Companion.FOOTER_VIEW
@@ -103,11 +104,20 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
             override fun getItemDetailsProvider(): ItemDetailsProvider<K>? {
                 return getListableItemDetailsProvider() ?: super.getItemDetailsProvider()
             }
+
+            override fun onMyItemViewHolderCreated(helper: ViewHelper<K>, viewType: Int) {
+                onListableItemViewHolderCreated(helper, viewType)
+            }
         }
     }
 
     private abstract class Adapter<T, K>(layoutID: Int, list: MutableList<T>) :
             BaseQuickAdapter<T, ViewHolder<K>>(layoutID, list), LoadMoreModule, AnkoLogger {
+
+        override fun onItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
+            super.onItemViewHolderCreated(viewHolder, viewType)
+            onAfterItemViewHolderCreated(viewHolder, viewType)
+        }
 
         override fun onBindViewHolder(holder: ViewHolder<K>, position: Int) {
             bindItemDetails(holder, position)
@@ -127,6 +137,8 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
          * 目前该 ItemDetails 只在 SelectionTracker 中用到，所以并不会对其他组件造成影响。
          */
         abstract fun bindItemDetails(holder: ViewHolder<K>, position: Int)
+
+        abstract fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int)
     }
 
     private abstract class AdapterWithDraggableAndUpFetch<T, K>(layoutID: Int, list: MutableList<T>) : Adapter<T, K>(layoutID, list), UpFetchModule, DraggableModule
@@ -167,61 +179,77 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
             val a = when (ext) {
                 ListableManager.EXT.WITH_DRAGGABLE_AND_UP_FETCH -> {
                     object : AdapterWithDraggableAndUpFetch<T, K>(listItemLayoutID, dataList) {
-                        override fun convert(helper: ViewHolder<K>, item: T) {
-                            itemConvert(helper, item)
+                        override fun convert(holder: ViewHolder<K>, item: T) {
+                            itemConvert(holder, item)
                         }
 
-                        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
-                            itemConvert(helper, item, payloads)
+                        override fun convert(holder: ViewHolder<K>, item: T, payloads: List<Any>) {
+                            itemConvert(holder, item, payloads)
                         }
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
                             mBindItemDetails(holder, position)
+                        }
+
+                        override fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
+                            onMyItemViewHolderCreated(viewHolder, viewType)
                         }
                     }
                 }
                 ListableManager.EXT.WITH_DRAGGABLE -> {
                     object : AdapterWithDraggable<T, K>(listItemLayoutID, dataList) {
-                        override fun convert(helper: ViewHolder<K>, item: T) {
-                            itemConvert(helper, item)
+                        override fun convert(holder: ViewHolder<K>, item: T) {
+                            itemConvert(holder, item)
                         }
 
-                        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
-                            itemConvert(helper, item, payloads)
+                        override fun convert(holder: ViewHolder<K>, item: T, payloads: List<Any>) {
+                            itemConvert(holder, item, payloads)
                         }
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
                             mBindItemDetails(holder, position)
+                        }
+
+                        override fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
+                            onMyItemViewHolderCreated(viewHolder, viewType)
                         }
                     }
                 }
                 ListableManager.EXT.WITH_UP_FETCH -> {
                     object : AdapterWithUpFetch<T, K>(listItemLayoutID, dataList) {
-                        override fun convert(helper: ViewHolder<K>, item: T) {
-                            itemConvert(helper, item)
+                        override fun convert(holder: ViewHolder<K>, item: T) {
+                            itemConvert(holder, item)
                         }
 
-                        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
-                            itemConvert(helper, item, payloads)
+                        override fun convert(holder: ViewHolder<K>, item: T, payloads: List<Any>) {
+                            itemConvert(holder, item, payloads)
                         }
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
                             mBindItemDetails(holder, position)
+                        }
+
+                        override fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
+                            onMyItemViewHolderCreated(viewHolder, viewType)
                         }
                     }
                 }
                 ListableManager.EXT.NORMAL -> {
                     object : Adapter<T, K>(listItemLayoutID, dataList) {
-                        override fun convert(helper: ViewHolder<K>, item: T) {
-                            itemConvert(helper, item)
+                        override fun convert(holder: ViewHolder<K>, item: T) {
+                            itemConvert(holder, item)
                         }
 
-                        override fun convert(helper: ViewHolder<K>, item: T, payloads: List<Any>) {
-                            itemConvert(helper, item, payloads)
+                        override fun convert(holder: ViewHolder<K>, item: T, payloads: List<Any>) {
+                            itemConvert(holder, item, payloads)
                         }
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
                             mBindItemDetails(holder, position)
+                        }
+
+                        override fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
+                            onMyItemViewHolderCreated(viewHolder, viewType)
                         }
                     }
                 }
@@ -237,11 +265,11 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                     adapter.notifyDataSetChanged()
                     setPage(page)
                 }
-                adapter.loadMoreModule?.loadMoreComplete()
+                adapter.loadMoreModule.loadMoreComplete()
             }
 
             override fun onError() {
-                adapter.loadMoreModule?.loadMoreFail()
+                adapter.loadMoreModule.loadMoreFail()
             }
         }
 
@@ -251,6 +279,8 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
         abstract fun loadData(page: Int, limit: Int,
                               dataCallback: OnLoadDataCallback<T>)
+
+        abstract fun onMyItemViewHolderCreated(helper: ViewHelper<K>, viewType: Int)
 
         override fun myLoadData(page: Int, limit: Int) {
             loadData(page, limit, onLoadDataCallback)
