@@ -132,7 +132,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
         override fun onCreateDefViewHolder(parent: ViewGroup, viewType: Int): ViewHolder<K> {
             val wrapper = onCreateItemViewWrapper(parent, viewType)
-                    ?: return super.createBaseViewHolder(parent, viewType)
+                    ?: return super.onCreateDefViewHolder(parent, viewType)
             return super.createBaseViewHolder(wrapper)
         }
 
