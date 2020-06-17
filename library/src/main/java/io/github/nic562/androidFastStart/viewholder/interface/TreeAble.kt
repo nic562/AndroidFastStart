@@ -1,6 +1,7 @@
 package io.github.nic562.androidFastStart.viewholder.`interface`
 
 import android.view.View
+import android.view.ViewGroup
 
 /**
  * @property tree 树叉号，不同值标识不同级别
@@ -29,6 +30,10 @@ interface TreeAble {
     fun <K> convert(helper: ViewHelper<K>, payloads: List<Any>) {}
 
     fun <K> onViewHolderCreated(helper: ViewHelper<K>, viewType: Int) {}
+
+    fun onCreateItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup? {
+        return null
+    }
 
     val expandable: Boolean
     val footer: TreeAble?

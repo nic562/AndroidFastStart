@@ -2,22 +2,29 @@ package io.github.nic562.androidFastStartDemo
 
 import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Canvas
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.LayoutRes
 import androidx.core.animation.doOnEnd
 import androidx.core.animation.doOnStart
-import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
+import com.billy.android.swipe.SmartSwipe
+import com.billy.android.swipe.SmartSwipeWrapper
+import com.billy.android.swipe.SwipeConsumer
+import com.billy.android.swipe.consumer.SlidingConsumer
+import com.billy.android.swipe.listener.SimpleSwipeListener
 import io.github.nic562.androidFastStart.*
 import io.github.nic562.androidFastStart.viewholder.BaseTree
 import io.github.nic562.androidFastStart.viewholder.`interface`.TreeAble
@@ -193,6 +200,27 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
             helper.hSetText(R.id.tv_tree_child, title)
         }
 
+        override fun onCreateItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup? {
+            val v = LayoutInflater.from(parent.context).inflate(layoutResID, parent, false)
+            val x = TextView(parent.context).apply {
+                textSize = 14f
+                setBackgroundColor(0xFFAA0000.toInt())
+                setTextColor(0xFFFFFFFF.toInt())
+                gravity = Gravity.CENTER
+                width = 200
+            }
+            return SmartSwipe.wrap(v).addConsumer(SlidingConsumer().apply {
+                setRightDrawerView(x)
+                releaseMode = SwipeConsumer.RELEASE_MODE_AUTO_CLOSE
+                relativeMoveFactor = SlidingConsumer.FACTOR_FOLLOW
+                setScrimColor(0x1F000000)
+                addListener(object: SimpleSwipeListener(){
+                    override fun onSwipeStart(wrapper: SmartSwipeWrapper?, consumer: SwipeConsumer?, direction: Int) {
+                        x.text = "hi swiped: ${System.currentTimeMillis()}"
+                    }
+                })
+            }).wrapper
+        }
         override fun <K> convert(helper: ViewHelper<K>, payloads: List<Any>) {
             ValueAnimator.ofFloat(1f, 0.1f).apply {
                 val v = helper.hGetView<View>(R.id.tv_tree_child)
@@ -319,25 +347,6 @@ class ActivityTree : ActivityBase(), SomethingTreeListable<Long> {
                 }
             })
             setItemDragFlags(ItemTouchHelper.DOWN or ItemTouchHelper.UP)
-            setItemSwipeListener(object : OnItemSwipeListener {
-                override fun onItemSwipeStart(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
-                    println("swipe start from $pos")
-                }
-
-                override fun clearView(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
-                    println("swipe clear!!!!!!!!")
-                }
-
-                override fun onItemSwiped(viewHolder: RecyclerView.ViewHolder?, pos: Int) {
-                    println("swipe end::: $pos")
-                }
-
-                override fun onItemSwipeMoving(canvas: Canvas?, viewHolder: RecyclerView.ViewHolder?, dX: Float, dY: Float, isCurrentlyActive: Boolean) {
-                    println("swipe on $dX x $dY  ($isCurrentlyActive)")
-                    canvas?.drawColor(ContextCompat.getColor(this@ActivityTree, R.color.colorAccent))
-                }
-            })
-            setItemSwipeFlags(ItemTouchHelper.START)
             initListable(rv_cards)
             setEmptyView(R.layout.layout_list_empty)
             addHeaderView(R.layout.layout_header)

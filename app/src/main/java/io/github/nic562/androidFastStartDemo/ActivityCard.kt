@@ -208,19 +208,21 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                 }
 
                 override fun onItemSwipeMoving(canvas: Canvas?, viewHolder: RecyclerView.ViewHolder?, dX: Float, dY: Float, isCurrentlyActive: Boolean) {
-                    println("swipe on $dX x $dY  ($isCurrentlyActive) ${dX / (canvas?.width ?: 1)}")
-                    canvas?.drawColor(ContextCompat.getColor(this@ActivityCard, R.color.colorAccent))
-                    if (isCurrentlyActive) {
-                        val p = Paint().apply {
-                            style = Paint.Style.FILL
-                            color = Color.BLACK
-                            strokeWidth = 12f
-                            textSize = 100f
-                        }
-                        if (abs(dX) / (canvas?.width ?: 1) >= 0.7f) {
-                            canvas?.drawText("loosen to Del", 50f, 200f, p)
-                        } else {
-                            canvas?.drawText("Del", 50f, 200f, p)
+                    println("swipe on $dX x $dY  ($isCurrentlyActive)")
+                    canvas?.let {
+                        it.drawColor(ContextCompat.getColor(this@ActivityCard, R.color.colorAccent))
+                        if (isCurrentlyActive) {
+                            val p = Paint().apply {
+                                style = Paint.Style.FILL
+                                color = Color.BLACK
+                                strokeWidth = 12f
+                                textSize = 100f
+                            }
+                            val metrics = p.fontMetrics
+                            val distance = (metrics.bottom - metrics.top) / 2 - metrics.bottom
+                            val rect = it.clipBounds
+                            val baseline = rect.centerY() + distance
+                            it.drawText("Del", 20f, baseline, p)
                         }
                     }
                 }

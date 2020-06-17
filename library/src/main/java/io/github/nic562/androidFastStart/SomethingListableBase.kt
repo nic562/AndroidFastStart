@@ -9,7 +9,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
-import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 
 /**
  * 实现基于RecyclerView的序列数据展示功能接口
@@ -31,11 +30,6 @@ interface SomethingListableBase<K> : SomethingWithContext {
     fun getListableItemDetailsProvider(): ItemDetailsProvider<K>? {
         return null
     }
-
-    /**
-     * 可用于创建ItemViewHolder后的其他代码调用
-     */
-    fun onListableItemViewHolderCreated(helper: ViewHelper<K>, viewType: Int) {}
 
     /**
      * 获取多数情况下通用的垂直布局LayoutManager

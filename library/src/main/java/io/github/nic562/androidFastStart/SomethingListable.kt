@@ -70,6 +70,18 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
         }
     }
 
+    /**
+     * 可用于创建ItemViewHolder后的其他代码调用
+     */
+    fun onListableItemViewHolderCreated(helper: ViewHelper<K>, viewType: Int) {}
+
+    /**
+     * 用于构建自定义ItemView的根view 默认为空则按内部规则构建
+     */
+    fun onCreateListableItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup? {
+        return null
+    }
+
     override fun instanceListableManager(vararg args: Any): DataListableManager<T, K> {
         if (!(args.isNotEmpty() && args[0] is Int)) {
             throw RuntimeException("The first arg means the [List Item Layout ID], it must be an Int.")
@@ -105,6 +117,10 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                 return getListableItemDetailsProvider() ?: super.getItemDetailsProvider()
             }
 
+            override fun onMyCreateItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup? {
+                return onCreateListableItemViewWrapper(parent, viewType)
+            }
+
             override fun onMyItemViewHolderCreated(helper: ViewHelper<K>, viewType: Int) {
                 onListableItemViewHolderCreated(helper, viewType)
             }
@@ -113,6 +129,12 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
     private abstract class Adapter<T, K>(layoutID: Int, list: MutableList<T>) :
             BaseQuickAdapter<T, ViewHolder<K>>(layoutID, list), LoadMoreModule, AnkoLogger {
+
+        override fun onCreateDefViewHolder(parent: ViewGroup, viewType: Int): ViewHolder<K> {
+            val wrapper = onCreateItemViewWrapper(parent, viewType)
+                    ?: return super.createBaseViewHolder(parent, viewType)
+            return super.createBaseViewHolder(wrapper)
+        }
 
         override fun onItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
             super.onItemViewHolderCreated(viewHolder, viewType)
@@ -138,6 +160,7 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
          */
         abstract fun bindItemDetails(holder: ViewHolder<K>, position: Int)
 
+        abstract fun onCreateItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup?
         abstract fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int)
     }
 
@@ -191,6 +214,10 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                             mBindItemDetails(holder, position)
                         }
 
+                        override fun onCreateItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup? {
+                            return onMyCreateItemViewWrapper(parent, viewType)
+                        }
+
                         override fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
                             onMyItemViewHolderCreated(viewHolder, viewType)
                         }
@@ -208,6 +235,10 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
                             mBindItemDetails(holder, position)
+                        }
+
+                        override fun onCreateItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup? {
+                            return onMyCreateItemViewWrapper(parent, viewType)
                         }
 
                         override fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
@@ -229,6 +260,10 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                             mBindItemDetails(holder, position)
                         }
 
+                        override fun onCreateItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup? {
+                            return onMyCreateItemViewWrapper(parent, viewType)
+                        }
+
                         override fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
                             onMyItemViewHolderCreated(viewHolder, viewType)
                         }
@@ -246,6 +281,10 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
 
                         override fun bindItemDetails(holder: ViewHolder<K>, position: Int) {
                             mBindItemDetails(holder, position)
+                        }
+
+                        override fun onCreateItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup? {
+                            return onMyCreateItemViewWrapper(parent, viewType)
                         }
 
                         override fun onAfterItemViewHolderCreated(viewHolder: ViewHolder<K>, viewType: Int) {
@@ -281,6 +320,8 @@ interface SomethingListable<T, K> : SomethingListableBase<K> {
                               dataCallback: OnLoadDataCallback<T>)
 
         abstract fun onMyItemViewHolderCreated(helper: ViewHelper<K>, viewType: Int)
+
+        abstract fun onMyCreateItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup?
 
         override fun myLoadData(page: Int, limit: Int) {
             loadData(page, limit, onLoadDataCallback)

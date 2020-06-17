@@ -4,9 +4,18 @@ import android.content.Context
 import android.database.Cursor
 import android.os.Bundle
 import android.provider.Telephony
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.CheckedTextView
+import android.widget.TextView
 import androidx.recyclerview.selection.*
+import com.billy.android.swipe.SmartSwipe
+import com.billy.android.swipe.SmartSwipeWrapper
+import com.billy.android.swipe.SwipeConsumer
+import com.billy.android.swipe.consumer.SlidingConsumer
+import com.billy.android.swipe.listener.SimpleSwipeListener
 import io.github.nic562.androidFastStart.*
 import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
@@ -27,7 +36,7 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
             Telephony.Sms.BODY,
             Telephony.Sms.DATE,
             Telephony.Sms.TYPE)
-    
+
     override val listableManager: ListableManager<Long> by lazy {
         instanceListableManager(R.layout.layout_item_sms, mutableListOf<SMS>())
     }
@@ -74,6 +83,29 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
         } finally {
             cur?.close()
         }
+    }
+
+    override fun onCreateListableItemViewWrapper(parent: ViewGroup, viewType: Int): ViewGroup? {
+        val v = LayoutInflater.from(this).inflate(R.layout.layout_item_sms, parent, false)
+        val x = TextView(getOwnerContext()).apply {
+            textSize = 14f
+            setBackgroundColor(0xFFAA0000.toInt())
+            setTextColor(0xFFFFFFFF.toInt())
+            gravity = Gravity.CENTER
+            width = 200
+        }
+        return SmartSwipe.wrap(v).addConsumer(SlidingConsumer().apply {
+            setRightDrawerView(x)
+            releaseMode = SwipeConsumer.RELEASE_MODE_AUTO_CLOSE
+            relativeMoveFactor = SlidingConsumer.FACTOR_FOLLOW
+            setScrimColor(0x1F000000)
+            addListener(object: SimpleSwipeListener(){
+                override fun onSwipeStart(wrapper: SmartSwipeWrapper?, consumer: SwipeConsumer?, direction: Int) {
+                    val v = wrapper?.findViewById<TextView>(R.id.tv_body)
+                    x.text = "swiped: ${v?.text} ${System.currentTimeMillis()}"
+                }
+            })
+        }).wrapper
     }
 
     override fun listableItemConvert(helper: ViewHelper<Long>, item: SMS) {
@@ -155,19 +187,20 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
             addFooterView(R.layout.layout_footer)
             setItemClickListener(object : OnItemClickListener {
                 override fun onItemClick(view: View, position: Int) {
-                    println("[click view]: $view >> position: $position")
+                    // 由于定义了itemViewWrapper 使用了 SmartSwipe生成的 SmartSwipeWrapper作为根节点 所以点击事件被拦截了？ 需使用子View 点击事件
+                    toast("[click view]: >> position: $position")
                 }
             })
             addChildClickViewIds(R.id.tv_id, R.id.tv_number)
             setItemChildClickListener(object : OnItemChildClickListener {
                 override fun onItemChildClick(view: View, position: Int) {
-                    println("[click child view]: $view >>> position: $position")
+                    toast("[click child view]: >>> position: $position")
                 }
             })
 
             getSelectionTracker()?.addObserver(object : SelectionTracker.SelectionObserver<Long>() {
                 override fun onSelectionChanged() {
-                    println("selection size::: ${listableManager.getSelectionTracker()?.selection?.size()}")
+                    toast("selection size::: ${listableManager.getSelectionTracker()?.selection?.size()}")
                 }
             })
         }
