@@ -13,8 +13,6 @@ import io.github.nic562.androidFastStart.ActivityBase
 import io.github.nic562.androidFastStart.SomethingListable
 import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 import kotlinx.android.synthetic.main.activity_coll.*
-import kotlinx.android.synthetic.main.activity_coll.rv_cards
-import kotlinx.android.synthetic.main.activity_coll.swipeRefreshLayout
 import org.jetbrains.anko.longToast
 import kotlin.math.abs
 import kotlin.random.Random
