@@ -38,9 +38,13 @@ class ActivityMain : ActivityBaseWithInitPermission() {
         btn_page.setOnClickListener {
             startActivity(intentFor<ActivityPage>())
         }
+
+        btn_coll.setOnClickListener {
+            startActivity(intentFor<ActivityColl>())
+        }
     }
 
-    override val initPermissionsRunnable = object: RunnableWithPermissions {
+    override val initPermissionsRunnable = object : RunnableWithPermissions {
         override val authFailedMsg = "软件启动所需权限"
         override val requestCode = 9999
         override val permissions = arrayOf(android.Manifest.permission.READ_PHONE_STATE)

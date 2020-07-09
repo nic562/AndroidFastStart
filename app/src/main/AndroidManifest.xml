@@ -36,7 +36,12 @@
             android:name=".ActivityTree"
             android:theme="@style/MaterialTheme" />
 
-        <activity android:name=".ActivityPage"
+        <activity
+            android:name=".ActivityPage"
             android:theme="@style/MaterialTheme" />
+
+        <activity
+            android:name=".ActivityColl"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 </manifest>

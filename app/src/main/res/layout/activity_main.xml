@@ -39,4 +39,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Test page" />
+
+    <Button
+        android:id="@+id/btn_coll"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Collapsing Cards" />
 </LinearLayout>

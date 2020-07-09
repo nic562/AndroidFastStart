@@ -37,6 +37,8 @@ dependencies {
     implementation 'com.billy.android:smart-swipe:1.1.2'
     implementation 'com.billy.android:smart-swipe-x:1.1.0'
 
-    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.1.0"
+
+    implementation 'com.android.support:palette-v7:29.0.0'
 
 }
