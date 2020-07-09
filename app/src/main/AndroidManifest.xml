@@ -10,7 +10,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme">
+        android:theme="@style/MaterialTheme">
 
         <activity android:name=".ActivityMain">
             <intent-filter>
@@ -24,24 +24,16 @@
 
         <activity android:name=".ActivitySMS" />
 
-        <activity
-            android:name=".ActivityCard"
-            android:theme="@style/MaterialTheme" />
+        <activity android:name=".ActivityCard" />
 
-        <activity
-            android:name=".ActivityCardRaw"
-            android:theme="@style/MaterialTheme" />
+        <activity android:name=".ActivityCardRaw" />
 
-        <activity
-            android:name=".ActivityTree"
-            android:theme="@style/MaterialTheme" />
+        <activity android:name=".ActivityTree" />
 
-        <activity
-            android:name=".ActivityPage"
-            android:theme="@style/MaterialTheme" />
+        <activity android:name=".ActivityPage" />
 
         <activity
             android:name=".ActivityColl"
-            android:theme="@style/AppTheme.NoActionBar" />
+            android:theme="@style/MaterialTheme.NoActionBar" />
     </application>
 </manifest>

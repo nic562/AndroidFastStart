@@ -290,6 +290,7 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
 
     private fun loadDelay() {
         listableManager.setCanLoadMore(false) // 防止触发下拉加载数据事件
+        listableManager.getSelectionTracker()?.clearSelection()
         swipeRefreshLayout.isRefreshing = true
         rv_cards.postDelayed({
             listableManager.reloadData()
