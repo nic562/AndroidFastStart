@@ -12,7 +12,6 @@ import com.google.android.material.appbar.AppBarLayout
 import io.github.nic562.androidFastStart.ActivityBase
 import io.github.nic562.androidFastStart.SomethingListable
 import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
-import kotlinx.android.synthetic.main.activity_card.*
 import kotlinx.android.synthetic.main.activity_coll.*
 import kotlinx.android.synthetic.main.activity_coll.rv_cards
 import kotlinx.android.synthetic.main.activity_coll.swipeRefreshLayout
