@@ -19,6 +19,7 @@ import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.ViewHolder
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
 import io.github.nic562.androidFastStart.viewholder.`interface`.TreeAble
+import io.github.nic562.androidFastStart.viewholder.`interface`.TreeAbleData
 import org.jetbrains.anko.AnkoLogger
 
 /**
@@ -49,13 +50,14 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
          */
         fun isExpanded(@IntRange(from = 0) position: Int): Boolean
 
-        fun addData(t: TreeAble, position: Int? = null)
-        fun replaceData(t: TreeAble, position: Int)
-        fun getData(position: Int): TreeAble?
+        fun addData(t: TreeAbleData, position: Int? = null)
+        fun replaceData(t: TreeAbleData, position: Int)
+        fun getData(position: Int): TreeAbleData?
+        fun addViewNode(t: TreeAble)
     }
 
     interface OnLoadDataCallback {
-        fun onLoadData(data: Collection<TreeAble>, totalCount: Int, page: Int)
+        fun onLoadData(data: Collection<TreeAbleData>, totalCount: Int, page: Int)
         fun onError()
     }
 
@@ -86,24 +88,24 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
     }
 
     private interface MyNode {
-        val treeNode: TreeAble
+        val data: TreeAbleData
 
-        fun mkNodes(ns: MutableList<TreeAble>?): MutableList<BaseNode>? {
+        fun mkNodes(ns: MutableList<TreeAbleData>?): MutableList<BaseNode>? {
             if (ns == null) {
                 return null
             }
             val l = arrayListOf<BaseNode>()
             for (x in ns) {
-                if (x.expandable) {
-                    l.add(ExpandNode(x))
-                } else {
+                if (x.children?.isEmpty() == true) {
                     l.add(Node(x))
+                } else {
+                    l.add(ExpandNode(x))
                 }
             }
             return l
         }
 
-        fun mkFooter(footer: TreeAble?): BaseNode? {
+        fun mkFooter(footer: TreeAbleData?): BaseNode? {
             if (footer == null) {
                 return null
             }
@@ -111,30 +113,30 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
         }
     }
 
-    private class Node(tree: TreeAble) : BaseNode(), NodeFooterImp, MyNode {
-        override val treeNode: TreeAble = tree
+    private class Node(mData: TreeAbleData) : BaseNode(), NodeFooterImp, MyNode {
+        override val data: TreeAbleData = mData
         override val childNode: MutableList<BaseNode>? by lazy {
-            mkNodes(treeNode.children)
+            mkNodes(data.children)
         }
         override val footerNode: BaseNode? by lazy {
-            mkFooter(treeNode.footer)
+            mkFooter(data.footer)
         }
     }
 
-    private class ExpandNode(tree: TreeAble) : BaseExpandNode(), NodeFooterImp, MyNode {
-        override val treeNode: TreeAble = tree
+    private class ExpandNode(mData: TreeAbleData) : BaseExpandNode(), NodeFooterImp, MyNode {
+        override val data: TreeAbleData = mData
         override val childNode: MutableList<BaseNode>? by lazy {
-            mkNodes(treeNode.children)
+            mkNodes(data.children)
         }
         override val footerNode: BaseNode? by lazy {
-            mkFooter(treeNode.footer)
+            mkFooter(data.footer)
         }
     }
 
     private abstract class Adapter<K> : BaseNodeAdapter(mutableListOf()), LoadMoreModule, AnkoLogger {
 
         override fun getItemType(data: List<BaseNode>, position: Int): Int {
-            return (data[position] as MyNode).treeNode.tree
+            return (data[position] as MyNode).data.tree
         }
 
         override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
@@ -166,8 +168,6 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
         abstract fun loadData(page: Int, limit: Int,
                               dataCallback: OnLoadDataCallback)
 
-        private val providerMap = mutableMapOf<Int, BaseNodeProvider>()
-
         private fun mBindItemDetails(holder: BaseViewHolder, position: Int) {
             if (holder !is ViewHolder<*>) {
                 return
@@ -187,7 +187,7 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
             }
         }
 
-        override val adapter: BaseQuickAdapter<BaseNode, BaseViewHolder> by lazy {
+        override val adapter: Adapter<K> by lazy {
             val a = when (ext) {
                 ListableManager.EXT.WITH_DRAGGABLE_AND_UP_FETCH -> {
                     object : AdapterWithDraggableAndUpFetch<K>() {
@@ -223,58 +223,57 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
             }
         }
 
-        override fun getData(position: Int): TreeAble? {
+        override fun getData(position: Int): TreeAbleData? {
             val d = adapter.getItemOrNull(position) ?: return null
             if (d is MyNode) {
-                return d.treeNode
+                return d.data
             }
             return null
         }
 
-        override fun addData(t: TreeAble, position: Int?) {
-            findAllNodeProvider(t)
+        override fun addData(t: TreeAbleData, position: Int?) {
             val n = tree2Node(t)
-            if (position == null)
+            if (position == null) {
                 adapter.addData(n)
-            else
+            } else
                 adapter.addData(position, n)
         }
 
-        override fun replaceData(t: TreeAble, position: Int) {
-            findAllNodeProvider(t)
+        override fun replaceData(t: TreeAbleData, position: Int) {
             val n = tree2Node(t)
             adapter.data[position] = n
         }
 
-        @Suppress("UNCHECKED_CAST")
+        override fun addViewNode(t: TreeAble) {
+            adapter.addNodeProvider(getNodeProvider(t))
+        }
+
         override fun expand(position: Int, notifyDataChange: Boolean, animate: Boolean, payload: Any?): Boolean {
-            (adapter as Adapter<K>).expandOrCollapse(position, animate, notifyDataChange, payload)
+            adapter.expandOrCollapse(position, animate, notifyDataChange, payload)
             return isExpanded(position)
         }
 
-        @Suppress("UNCHECKED_CAST")
         override fun isExpanded(position: Int): Boolean {
-            val data = (adapter as Adapter<K>).data[position]
+            val data = adapter.data[position]
             if (data is ExpandNode) {
                 return data.isExpanded
             }
             return false
         }
 
-        private fun tree2Node(t: TreeAble): BaseNode {
-            return if (t.expandable) {
-                ExpandNode(t)
-            } else {
+        private fun tree2Node(t: TreeAbleData): BaseNode {
+            return if (t.children?.isEmpty() == true) {
                 Node(t)
+            } else {
+                ExpandNode(t)
             }
         }
 
         private val onLoadDataCallback = object : OnLoadDataCallback {
-            override fun onLoadData(data: Collection<TreeAble>, totalCount: Int, page: Int) {
+            override fun onLoadData(data: Collection<TreeAbleData>, totalCount: Int, page: Int) {
                 this@MyListableManager.mTotalCount = totalCount
                 if (data.isNotEmpty()) {
                     for (x in data) {
-                        findAllNodeProvider(x)
                         adapter.addData(tree2Node(x))
                     }
                     setPage(page)
@@ -294,20 +293,6 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
 
         override fun myLoadData(page: Int, limit: Int) {
             loadData(page, limit, onLoadDataCallback)
-        }
-
-        private fun findAllNodeProvider(tree: TreeAble) {
-            if (providerMap[tree.tree] == null) {
-                providerMap[tree.tree] = getNodeProvider(tree)
-            }
-            if (tree.footer != null) {
-                findAllNodeProvider(tree.footer!!)
-            }
-            if (!tree.children.isNullOrEmpty()) {
-                for (x in tree.children!!) {
-                    findAllNodeProvider(x)
-                }
-            }
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -331,12 +316,12 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
 
                 override fun convert(helper: BaseViewHolder, item: BaseNode) {
                     val n = item as MyNode
-                    n.treeNode.convert(exchangeViewHolder(helper))
+                    treeN.convert(exchangeViewHolder(helper), n.data)
                 }
 
                 override fun convert(helper: BaseViewHolder, item: BaseNode, payloads: List<Any>) {
                     val n = item as MyNode
-                    n.treeNode.convert(exchangeViewHolder(helper), payloads)
+                    treeN.convert(exchangeViewHolder(helper), n.data, payloads)
                 }
 
                 override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder<K> {
@@ -353,28 +338,26 @@ interface SomethingTreeListable<K> : SomethingListableBase<K> {
                 override fun onChildClick(helper: BaseViewHolder, view: View, data: BaseNode, position: Int) {
                     if (treeN.onChildClick == null)
                         return super.onChildClick(helper, view, data, position)
-                    treeN.onChildClick!!.onChildClick(exchangeViewHolder(helper), view, (data as MyNode).treeNode, position)
+                    treeN.onChildClick!!.onChildClick(exchangeViewHolder(helper), view, (data as MyNode).data, position)
                 }
 
                 override fun onChildLongClick(helper: BaseViewHolder, view: View, data: BaseNode, position: Int): Boolean {
                     if (treeN.onChildLongClick == null)
                         return super.onChildLongClick(helper, view, data, position)
-                    return treeN.onChildLongClick!!.onChildLongClick(exchangeViewHolder(helper), view, (data as MyNode).treeNode, position)
+                    return treeN.onChildLongClick!!.onChildLongClick(exchangeViewHolder(helper), view, (data as MyNode).data, position)
                 }
 
                 override fun onClick(helper: BaseViewHolder, view: View, data: BaseNode, position: Int) {
                     if (treeN.onClick == null)
                         return super.onClick(helper, view, data, position)
-                    treeN.onClick!!.onClick(exchangeViewHolder(helper), view, (data as MyNode).treeNode, position)
+                    treeN.onClick!!.onClick(exchangeViewHolder(helper), view, (data as MyNode).data, position)
                 }
 
                 override fun onLongClick(helper: BaseViewHolder, view: View, data: BaseNode, position: Int): Boolean {
                     if (treeN.onLongClick == null)
                         return super.onLongClick(helper, view, data, position)
-                    return treeN.onLongClick!!.onLongClick(exchangeViewHolder(helper), view, (data as MyNode).treeNode, position)
+                    return treeN.onLongClick!!.onLongClick(exchangeViewHolder(helper), view, (data as MyNode).data, position)
                 }
-            }.apply {
-                (adapter as BaseNodeAdapter).addNodeProvider(this)
             }
         }
     }
