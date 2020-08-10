@@ -9,9 +9,8 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.os.Build
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.os.Handler
+import android.view.*
 import android.view.animation.DecelerateInterpolator
 import android.widget.TextView
 import androidx.appcompat.view.ActionMode
@@ -27,6 +26,7 @@ import io.github.nic562.androidFastStart.viewholder.ItemDetails
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
 import io.github.nic562.androidFastStart.viewholder.`interface`.ViewHelper
 import kotlinx.android.synthetic.main.activity_card.*
+import org.jetbrains.anko.find
 import org.jetbrains.anko.longToast
 import org.jetbrains.anko.toast
 import java.lang.StringBuilder
@@ -45,20 +45,25 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
         // 开启拖拽滑动支持
     }
 
+    private val delayHandler = Handler()
+
     override fun loadListableData(page: Int, limit: Int, dataCallback: SomethingListable.OnLoadDataCallback<String>) {
-        swipeRefreshLayout.isRefreshing = false
-        listableManager.setCanLoadMore(true)
-        if (Random(System.currentTimeMillis()).nextInt() % 3 == 0) {
-            longToast("测试错误！！~~")
-            println("page: $page 测试错误！！~~")
-            dataCallback.onError()
-            return
-        }
-        val l = arrayListOf<String>()
-        for (i in 1..limit) {
-            l.add("$page ${page * limit + i}")
-        }
-        dataCallback.onLoadData(l, 50, page)
+        delayHandler.postDelayed({
+            swipeRefreshLayout.isRefreshing = false
+            listableManager.setCanLoadMore(true)
+            if (Random(System.currentTimeMillis()).nextInt() % 3 == 0) {
+                longToast("测试错误！！~~")
+                println("page: $page 测试错误！！~~")
+                dataCallback.onError()
+                return@postDelayed
+            }
+
+            val l = arrayListOf<String>()
+            for (i in 1..limit) {
+                l.add("$page ${page * limit + i}")
+            }
+            dataCallback.onLoadData(l, 50, page)
+        }, 2000)
     }
 
     override fun listableItemConvert(helper: ViewHelper<Long>, item: String) {
@@ -138,6 +143,28 @@ class ActivityCard : ActivityBase(), SomethingListable<String, Long>, ActionMode
                     }
                     val aa = ObjectAnimator.ofFloat(v, "alpha", 0f, 1f)
                     return arrayOf(sY, sX, aa)
+                }
+            })
+            setAutoLoadMore(false)
+            setLoadMoreView(object : ListableManager.LoadMoreView {
+                override fun getRootView(parent: ViewGroup): View {
+                    return LayoutInflater.from(parent.context).inflate(R.layout.layout_load_more, parent, false)
+                }
+
+                override fun getLoadingView(viewHolder: RecyclerView.ViewHolder): View {
+                    return viewHolder.itemView.find(R.id.load_more_loading_view)
+                }
+
+                override fun getLoadCompleteView(viewHolder: RecyclerView.ViewHolder): View {
+                    return viewHolder.itemView.find(R.id.load_more_load_complete_view)
+                }
+
+                override fun getLoadEndView(viewHolder: RecyclerView.ViewHolder): View {
+                    return viewHolder.itemView.find(R.id.load_more_load_end_view)
+                }
+
+                override fun getLoadFailView(viewHolder: RecyclerView.ViewHolder): View {
+                    return viewHolder.itemView.find(R.id.load_more_load_fail_view)
                 }
             })
             setAnimationFirstOnly(false)

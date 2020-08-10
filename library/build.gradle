@@ -44,7 +44,7 @@ dependencies {
     // https://github.com/CymChad/BaseRecyclerViewAdapterHelper
     implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:3.0.4'
 
-    api "androidx.recyclerview:recyclerview:$androidx_version"
+    api "androidx.recyclerview:recyclerview:1.1.0"
     api "androidx.recyclerview:recyclerview-selection:1.0.0"
 
     // https://github.com/Kotlin/anko

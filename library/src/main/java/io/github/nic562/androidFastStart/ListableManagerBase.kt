@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.graphics.Canvas
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.chad.library.adapter.base.BaseQuickAdapter
 import com.chad.library.adapter.base.animation.BaseAnimation
+import com.chad.library.adapter.base.loadmore.BaseLoadMoreView
 import com.chad.library.adapter.base.module.BaseLoadMoreModule
 import com.chad.library.adapter.base.viewholder.BaseViewHolder
 import io.github.nic562.androidFastStart.viewholder.`interface`.ItemDetailsProvider
@@ -96,6 +98,30 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
 
     override fun setLimit(limit: Int) {
         this.mLimit = limit
+    }
+
+    override fun setLoadMoreView(loadMoreView: ListableManager.LoadMoreView) {
+        adapter.loadMoreModule.loadMoreView = object : BaseLoadMoreView() {
+            override fun getLoadComplete(holder: BaseViewHolder): View {
+                return loadMoreView.getLoadCompleteView(holder)
+            }
+
+            override fun getLoadEndView(holder: BaseViewHolder): View {
+                return loadMoreView.getLoadEndView(holder)
+            }
+
+            override fun getLoadFailView(holder: BaseViewHolder): View {
+                return loadMoreView.getLoadFailView(holder)
+            }
+
+            override fun getLoadingView(holder: BaseViewHolder): View {
+                return loadMoreView.getLoadingView(holder)
+            }
+
+            override fun getRootView(parent: ViewGroup): View {
+                return loadMoreView.getRootView(parent)
+            }
+        }
     }
 
     override fun getCanLoadMore(): Boolean {

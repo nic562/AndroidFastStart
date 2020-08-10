@@ -2,6 +2,7 @@ package io.github.nic562.androidFastStart
 
 import android.animation.Animator
 import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.annotation.IdRes
 import androidx.annotation.LayoutRes
@@ -30,6 +31,14 @@ interface ListableManager<K> {
         fun animators(@NotNull v: View): Array<Animator>
     }
 
+    interface LoadMoreView {
+        fun getRootView(parent: ViewGroup): View
+        fun getLoadingView(viewHolder: RecyclerView.ViewHolder): View
+        fun getLoadCompleteView(viewHolder: RecyclerView.ViewHolder): View
+        fun getLoadEndView(viewHolder: RecyclerView.ViewHolder): View
+        fun getLoadFailView(viewHolder: RecyclerView.ViewHolder): View
+    }
+
     /**
      * 额外功能支持
      * @property WITH_UP_FETCH 提供该上拉加载事件支持。只有提供该标识，setUpFetch* 才生效
@@ -53,6 +62,8 @@ interface ListableManager<K> {
     fun getLimit(): Int
 
     fun setLimit(limit: Int)
+
+    fun setLoadMoreView(loadMoreView: LoadMoreView)
 
     fun getCanLoadMore(): Boolean
 
