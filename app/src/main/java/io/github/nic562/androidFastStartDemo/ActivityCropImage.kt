@@ -3,6 +3,7 @@ package io.github.nic562.androidFastStartDemo
 import android.net.Uri
 import android.os.Bundle
 import io.github.nic562.androidFastStart.ActivityBaseWithImageCrop
+import io.github.nic562.androidFastStart.SomethingWithImageCrop
 import kotlinx.android.synthetic.main.activity_crop_image.*
 import java.io.File
 
@@ -20,8 +21,8 @@ class ActivityCropImage : ActivityBaseWithImageCrop() {
         }
     }
 
-    override fun getImageOption(): ImageOption {
-        val o = ImageOption()
+    override fun getImageOption(): SomethingWithImageCrop.ImageOption {
+        val o = SomethingWithImageCrop.ImageOption()
         o.crop = true
         o.compressQuality = 80
         return o

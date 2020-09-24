@@ -22,6 +22,8 @@
 
         <activity android:name=".ActivityCropImage" />
 
+        <activity android:name=".ActivityCropImage2" />
+
         <activity android:name=".ActivitySMS" />
 
         <activity android:name=".ActivityCard" />

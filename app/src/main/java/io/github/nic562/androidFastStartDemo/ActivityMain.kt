@@ -19,6 +19,10 @@ class ActivityMain : ActivityBaseWithInitPermission() {
             startActivity(intentFor<ActivityCropImage>())
         }
 
+        btn_crop2.setOnClickListener {
+            startActivity(intentFor<ActivityCropImage2>())
+        }
+
         btn_sms.setOnClickListener {
             startActivity(intentFor<ActivitySMS>())
         }

@@ -17,7 +17,7 @@ allprojects {
 ### module build.gradle
 ```gradle
 dependencies {
-    implementation 'com.github.nic562:AndroidFastStart:0.9.4.8'
+    implementation 'com.github.nic562:AndroidFastStart:0.9.5.1'
 }
 ```
 
@@ -54,6 +54,16 @@ class SomeActivity extends ActivityBaseWithInitPermission {
 
 - 或者集成从拍照、相册中获取图像等api
 ```java
+# 使用接口来扩展功能
+class SomeActivity extends ActivityBase implement SomethingWithImageCrop {
+    ...
+
+    private fun openImageChoice() {
+        runWithPermissions(getImageChoiceRunnableWithPermissions())
+    }
+}
+
+# 或
 class SomeActivity extends ActivityBaseWithImageCrop {
     openImageChoice();
     getImageOption();
