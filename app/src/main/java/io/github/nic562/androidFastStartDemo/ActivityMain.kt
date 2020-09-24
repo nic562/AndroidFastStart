@@ -51,7 +51,7 @@ class ActivityMain : ActivityBaseWithInitPermission() {
     override val initPermissionsRunnable = object : RunnableWithPermissions {
         override val authFailedMsg = "软件启动所需权限"
         override val requestCode = 9999
-        override val permissions = arrayOf(android.Manifest.permission.READ_PHONE_STATE)
+        override val permissions = arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
 
         override fun success() {
             toast("授权成功！")

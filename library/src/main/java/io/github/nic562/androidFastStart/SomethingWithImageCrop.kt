@@ -38,7 +38,6 @@ interface SomethingWithImageCrop : SomethingWithContext, AnkoLogger {
 
         val PERMISSION = arrayOf(
                 Manifest.permission.CAMERA,
-                Manifest.permission.READ_PHONE_STATE,
                 Manifest.permission.READ_EXTERNAL_STORAGE,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE)
     }
@@ -65,7 +64,7 @@ interface SomethingWithImageCrop : SomethingWithContext, AnkoLogger {
         return UCrop.Options().apply {
             setStatusBarColor(getCropUIStatusBarColor())
             setToolbarColor(getCropUIToolbarColor())
-            setActiveWidgetColor(getCropUIActiveWidgetColor())
+            setActiveControlsWidgetColor(getCropUIActiveWidgetColor())
             setToolbarWidgetColor(getCropUIToolbarWidgetColor())
         }
     }

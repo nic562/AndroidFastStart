@@ -38,7 +38,10 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation "androidx.appcompat:appcompat:$androidx_version"
 
-    implementation 'com.github.yalantis:ucrop:2.2.2-native'
+    // https://github.com/Yalantis/uCrop
+    implementation 'com.github.yalantis:ucrop:2.2.6-native'
+
+
     implementation 'pub.devrel:easypermissions:3.0.0'
 
     // https://github.com/CymChad/BaseRecyclerViewAdapterHelper
