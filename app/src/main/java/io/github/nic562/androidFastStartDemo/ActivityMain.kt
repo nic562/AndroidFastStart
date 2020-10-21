@@ -2,6 +2,7 @@ package io.github.nic562.androidFastStartDemo
 
 import android.os.Bundle
 import io.github.nic562.androidFastStart.ActivityBaseWithInitPermission
+import io.github.nic562.androidFastStart.SomethingWithPermissions
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.intentFor
 import org.jetbrains.anko.toast
@@ -48,7 +49,7 @@ class ActivityMain : ActivityBaseWithInitPermission() {
         }
     }
 
-    override val initPermissionsRunnable = object : RunnableWithPermissions {
+    override val initPermissionsRunnable = object : SomethingWithPermissions.RunnableWithPermissions {
         override val authFailedMsg = "软件启动所需权限"
         override val requestCode = 9999
         override val permissions = arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)

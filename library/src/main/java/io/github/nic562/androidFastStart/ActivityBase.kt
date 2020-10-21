@@ -19,19 +19,13 @@ import pub.devrel.easypermissions.EasyPermissions
  *
  * Created by Nic on 2018/10/10.
  */
-abstract class ActivityBase : AppCompatActivity(), AnkoLogger {
+abstract class ActivityBase : AppCompatActivity(),
+        SomethingWithPermissions,
+        AnkoLogger {
 
     private val deniedPermissions = ArrayList<String>()
 
     private var latestPermissionSettingRequestCode: Int = -1
-
-    interface RunnableWithPermissions {
-        val authFailedMsg: String
-        val requestCode: Int
-        val permissions: Array<String>
-        fun success()
-        fun failed(deniedPermissions: List<String>) {}
-    }
 
     private val permissionCallback = object : EasyPermissions.PermissionCallbacks {
         /**
@@ -71,9 +65,9 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger {
         }
     }
 
-    private val mapRunnableWithPermissions = mutableMapOf<Int, RunnableWithPermissions>()
+    private val mapRunnableWithPermissions = mutableMapOf<Int, SomethingWithPermissions.RunnableWithPermissions>()
 
-    protected fun runWithPermissions(runnableWithPermissions: RunnableWithPermissions) {
+    override fun runWithPermissions(runnableWithPermissions: SomethingWithPermissions.RunnableWithPermissions) {
         if (hasPermissions(*runnableWithPermissions.permissions)) {
             runnableWithPermissions.success()
         } else {
@@ -85,7 +79,7 @@ abstract class ActivityBase : AppCompatActivity(), AnkoLogger {
         }
     }
 
-    protected fun hasPermissions(vararg permissions: String): Boolean {
+    override fun hasPermissions(vararg permissions: String): Boolean {
         if (permissions.isEmpty()) {
             return true
         }

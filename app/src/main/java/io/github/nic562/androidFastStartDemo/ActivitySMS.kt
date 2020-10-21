@@ -138,7 +138,7 @@ class ActivitySMS : ActivityBase(), SomethingListable<SMS, Long> {
         }
     }
 
-    private val loadSMSWithPermission = object : RunnableWithPermissions {
+    private val loadSMSWithPermission = object : SomethingWithPermissions.RunnableWithPermissions {
         override val authFailedMsg = "读取短信需要这些权限"
         override val requestCode = 999
         override val permissions = arrayOf(

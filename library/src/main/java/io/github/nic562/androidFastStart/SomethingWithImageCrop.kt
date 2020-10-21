@@ -178,8 +178,8 @@ interface SomethingWithImageCrop : SomethingWithContext, AnkoLogger {
         return File(getTmpDir(), "${System.currentTimeMillis()}.jpg")
     }
 
-    fun getImageChoiceRunnableWithPermissions(): ActivityBase.RunnableWithPermissions {
-        return object : ActivityBase.RunnableWithPermissions {
+    fun getImageChoiceRunnableWithPermissions(): SomethingWithPermissions.RunnableWithPermissions {
+        return object : SomethingWithPermissions.RunnableWithPermissions {
             override val authFailedMsg: String = getImageChoicePermissionsMsg()
             override val requestCode: Int = REQUEST_CODE_PERMISSIONS
             override val permissions: Array<String> = PERMISSION

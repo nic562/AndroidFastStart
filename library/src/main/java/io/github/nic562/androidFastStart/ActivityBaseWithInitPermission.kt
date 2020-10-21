@@ -10,7 +10,7 @@ abstract class ActivityBaseWithInitPermission : ActivityBase() {
 
     private var checkingInitPermissionOnce = false
 
-    abstract val initPermissionsRunnable: RunnableWithPermissions
+    abstract val initPermissionsRunnable: SomethingWithPermissions.RunnableWithPermissions
 
     override fun onStart() {
         super.onStart()
