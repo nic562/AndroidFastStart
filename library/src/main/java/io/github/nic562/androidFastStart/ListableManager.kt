@@ -52,10 +52,15 @@ interface ListableManager<K> {
 
     /**
      * 获取当前页码
-     * 不允许直接 setPage 是由于防止在加载失败时的页码与当前数据不对应。
+     * 一般情况下，不需直接 setPage 是由于防止在加载失败时的页码与当前数据不对应。
      * 后续接口的实现，在加载数据成功时才能修改页码
      */
     fun getPage(): Int
+
+    /**
+     * 建议在特殊情况下，需要手动跳页才使用
+     */
+    fun setPage(page: Int)
 
     fun getTotalCount(): Int
 

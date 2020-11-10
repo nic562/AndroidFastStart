@@ -84,7 +84,7 @@ abstract class ListableManagerBase<T, K, VH : BaseViewHolder> : ListableManager<
         return currPage
     }
 
-    protected fun setPage(page: Int) {
+    override fun setPage(page: Int) {
         currPage = page
     }
 
