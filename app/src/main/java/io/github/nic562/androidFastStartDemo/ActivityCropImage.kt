@@ -12,6 +12,8 @@ import java.io.File
  */
 class ActivityCropImage : ActivityBaseWithImageCrop() {
 
+    override val imageCropTmpDirAutoClean: Boolean = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_crop_image)
@@ -24,12 +26,17 @@ class ActivityCropImage : ActivityBaseWithImageCrop() {
     override fun getImageOption(): SomethingWithImageCrop.ImageOption {
         val o = SomethingWithImageCrop.ImageOption()
         o.crop = true
-        o.compressQuality = 80
+        o.compressQuality = 100
         return o
     }
 
     override fun onImageReady(tmpFilePath: String) {
         tv_msg.text = tmpFilePath
         iv_marker.setImageURI(Uri.fromFile(File(tmpFilePath)))
+    }
+
+    override fun onBackPressed() {
+        clearImageCroppingTmp()
+        super.onBackPressed()
     }
 }

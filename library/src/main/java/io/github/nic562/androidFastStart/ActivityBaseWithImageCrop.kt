@@ -19,6 +19,9 @@ abstract class ActivityBaseWithImageCrop : ActivityBase(),
     SomethingWithImageCrop {
     override var tmpCameraSavingFile: File? = null
 
+    // 用于改成手动清理临时目录，以适应部分模拟器会过早执行“onDestroy”方法的奇怪问题。请手动执行clearImageCroppingTmp 方法
+    open val imageCropTmpDirAutoClean = true
+
     protected fun openImageChoice() {
         runWithPermissions(getImageChoiceRunnableWithPermissions())
     }
@@ -37,7 +40,8 @@ abstract class ActivityBaseWithImageCrop : ActivityBase(),
     }
 
     override fun onDestroy() {
-        clearImageCroppingTmp()
+        if (imageCropTmpDirAutoClean)
+            clearImageCroppingTmp()
         super.onDestroy()
     }
 }
