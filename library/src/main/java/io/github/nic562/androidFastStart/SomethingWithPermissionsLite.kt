@@ -10,9 +10,19 @@ import pub.devrel.easypermissions.EasyPermissions
  */
 interface SomethingWithPermissionsLite : SomethingWithContext, SomethingWithPermissions {
 
-    val permissionCall: PermissionCall
+    interface PermissionTool {
+        fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray)
+        fun requestPermissions(runnableWithPermissions: SomethingWithPermissions.RunnableWithPermissions)
+        fun onActivityResult(requestCode: Int)
+    }
 
-    class PermissionCall(private val ctx: SomethingWithPermissionsLite) : EasyPermissions.PermissionCallbacks {
+    val permissionTool: PermissionTool
+
+    fun initPermissionTool(ctx: SomethingWithPermissionsLite): PermissionTool {
+        return PermissionCall(ctx)
+    }
+
+    private class PermissionCall(private val ctx: SomethingWithPermissionsLite) : EasyPermissions.PermissionCallbacks, PermissionTool {
         private val isInActivity = ctx.getOwnerContext() is Activity
 
         private val deniedPermissions = ArrayList<String>()
@@ -82,7 +92,7 @@ interface SomethingWithPermissionsLite : SomethingWithContext, SomethingWithPerm
             EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
         }
 
-        fun requestPermissions(runnableWithPermissions: SomethingWithPermissions.RunnableWithPermissions) {
+        override fun requestPermissions(runnableWithPermissions: SomethingWithPermissions.RunnableWithPermissions) {
             requestPermissions(
                     runnableWithPermissions.authFailedMsg,
                     runnableWithPermissions.requestCode,
@@ -90,7 +100,7 @@ interface SomethingWithPermissionsLite : SomethingWithContext, SomethingWithPerm
             mapRunnableWithPermissions[runnableWithPermissions.requestCode] = runnableWithPermissions
         }
 
-        fun onActivityResult(requestCode: Int) {
+        override fun onActivityResult(requestCode: Int) {
             if (requestCode == AppSettingsDialog.DEFAULT_SETTINGS_REQ_CODE && latestPermissionSettingRequestCode != -1) {
                 /**
                  * 在重复提示进入系统设置中设置权限后的回调, 检测没授权的权限列表
@@ -128,7 +138,7 @@ interface SomethingWithPermissionsLite : SomethingWithContext, SomethingWithPerm
         if (hasPermissions(*runnableWithPermissions.permissions)) {
             runnableWithPermissions.success()
         } else {
-            permissionCall.requestPermissions(runnableWithPermissions)
+            permissionTool.requestPermissions(runnableWithPermissions)
         }
     }
 

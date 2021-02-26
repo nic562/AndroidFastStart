@@ -22,7 +22,7 @@ abstract class ActivityBase : AppCompatActivity(),
         SomethingWithPermissionsLite,
         AnkoLogger {
 
-    override val permissionCall = SomethingWithPermissionsLite.PermissionCall(this)
+    override val permissionTool by lazy { initPermissionTool(this) }
 
     override fun getOwnerContext(): Context {
         return this
@@ -30,12 +30,12 @@ abstract class ActivityBase : AppCompatActivity(),
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        permissionCall.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        permissionTool.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        permissionCall.onActivityResult(requestCode)
+        permissionTool.onActivityResult(requestCode)
     }
 
     /**

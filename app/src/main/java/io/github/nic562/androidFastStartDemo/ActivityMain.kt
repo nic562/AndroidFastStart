@@ -1,8 +1,11 @@
 package io.github.nic562.androidFastStartDemo
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
-import io.github.nic562.androidFastStart.ActivityBaseWithInitPermission
+import androidx.appcompat.app.AppCompatActivity
 import io.github.nic562.androidFastStart.SomethingWithPermissions
+import io.github.nic562.androidFastStart.SomethingWithPermissionsLite
 import kotlinx.android.synthetic.main.activity_main.*
 import org.jetbrains.anko.intentFor
 import org.jetbrains.anko.toast
@@ -10,7 +13,12 @@ import org.jetbrains.anko.toast
 /**
  * Created by Nic on 2018/10/11.
  */
-class ActivityMain : ActivityBaseWithInitPermission() {
+class ActivityMain : AppCompatActivity(), SomethingWithPermissionsLite {
+    override val permissionTool by lazy { initPermissionTool(this) }
+
+    override fun getOwnerContext(): Context {
+        return this
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,7 +57,22 @@ class ActivityMain : ActivityBaseWithInitPermission() {
         }
     }
 
-    override val initPermissionsRunnable = object : SomethingWithPermissions.RunnableWithPermissions {
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        permissionTool.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        permissionTool.onActivityResult(requestCode)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        runWithPermissions(initPermissionsRunnable)
+    }
+
+    private val initPermissionsRunnable = object : SomethingWithPermissions.RunnableWithPermissions {
         override val authFailedMsg = "软件启动所需权限"
         override val requestCode = 9999
         override val permissions = arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
