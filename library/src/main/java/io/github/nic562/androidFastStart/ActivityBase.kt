@@ -1,10 +1,9 @@
 package io.github.nic562.androidFastStart
 
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import org.jetbrains.anko.AnkoLogger
-import pub.devrel.easypermissions.AppSettingsDialog
-import pub.devrel.easypermissions.EasyPermissions
 
 /**
  * 用于快速构建activity的基类，集成了Anko Logger，以及EasyPermissions
@@ -20,113 +19,23 @@ import pub.devrel.easypermissions.EasyPermissions
  * Created by Nic on 2018/10/10.
  */
 abstract class ActivityBase : AppCompatActivity(),
-        SomethingWithPermissions,
+        SomethingWithPermissionsLite,
         AnkoLogger {
 
-    private val deniedPermissions = ArrayList<String>()
+    override val permissionCall = SomethingWithPermissionsLite.PermissionCall(this)
 
-    private var latestPermissionSettingRequestCode: Int = -1
-
-    private val permissionCallback = object : EasyPermissions.PermissionCallbacks {
-        /**
-         * 部分授权也会调用
-         */
-        override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
-            val r = mapRunnableWithPermissions[requestCode]
-            if (r != null) {
-                if (r.permissions.size == perms.size) {
-                    r.success()
-                    onPermissionsSettingFinish(requestCode)
-                }
-            }
-        }
-
-        /**
-         * 部分拒绝授权也会调用
-         */
-        override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
-            deniedPermissions.clear()
-            deniedPermissions.addAll(perms)
-            // 对应权限没有被授权并且设置为不再询问的, 再次打开对话框提醒用户
-            if (EasyPermissions.somePermissionPermanentlyDenied(this@ActivityBase, perms)) {
-                latestPermissionSettingRequestCode = requestCode // 保持这个请求号，以便子类再继续处理该情况
-                AppSettingsDialog.Builder(this@ActivityBase).build().show()
-            } else {
-                val r = mapRunnableWithPermissions[requestCode]
-                if (r != null) {
-                    r.failed(perms)
-                    onPermissionsSettingFinish(requestCode)
-                }
-            }
-        }
-
-        override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-            EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
-        }
-    }
-
-    private val mapRunnableWithPermissions = mutableMapOf<Int, SomethingWithPermissions.RunnableWithPermissions>()
-
-    override fun runWithPermissions(runnableWithPermissions: SomethingWithPermissions.RunnableWithPermissions) {
-        if (hasPermissions(*runnableWithPermissions.permissions)) {
-            runnableWithPermissions.success()
-        } else {
-            requestPermissions(
-                    runnableWithPermissions.authFailedMsg,
-                    runnableWithPermissions.requestCode,
-                    *runnableWithPermissions.permissions)
-            mapRunnableWithPermissions[runnableWithPermissions.requestCode] = runnableWithPermissions
-        }
-    }
-
-    override fun hasPermissions(vararg permissions: String): Boolean {
-        if (permissions.isEmpty()) {
-            return true
-        }
-        return EasyPermissions.hasPermissions(this, *permissions)
-    }
-
-    private fun requestPermissions(msg: String, requestCode: Int, vararg perms: String) {
-        EasyPermissions.requestPermissions(this, msg, requestCode, *perms)
+    override fun getOwnerContext(): Context {
+        return this
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        permissionCallback.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        permissionCall.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == AppSettingsDialog.DEFAULT_SETTINGS_REQ_CODE && latestPermissionSettingRequestCode != -1) {
-            /**
-             * 在重复提示进入系统设置中设置权限后的回调, 检测没授权的权限列表
-             *
-             * 从设置项返回, resultCode 都是cancel, 必须重新自行判断
-             */
-            val dms = ArrayList<String>()
-            for (x in deniedPermissions) {
-                if (!hasPermissions(x)) {
-                    dms.add(x)
-                }
-            }
-            deniedPermissions.clear()
-            if (dms.size > 0) {
-                permissionCallback.onPermissionsDenied(latestPermissionSettingRequestCode, dms)
-            } else {
-                val r = mapRunnableWithPermissions[latestPermissionSettingRequestCode]
-                if (r != null) {
-                    onPermissionsSettingFinish(latestPermissionSettingRequestCode)
-                    runWithPermissions(r)
-                }
-            }
-        }
-    }
-
-    private fun onPermissionsSettingFinish(requestCode: Int) {
-        if (requestCode in mapRunnableWithPermissions) {
-            mapRunnableWithPermissions.remove(requestCode)
-        }
-        latestPermissionSettingRequestCode = -1
+        permissionCall.onActivityResult(requestCode)
     }
 
     /**
